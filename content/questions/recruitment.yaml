@@ -1,0 +1,183 @@
+# CareerPilot original practice questions — recruitment-style aptitude items. Licence: CC BY 4.0.
+# These are practice items in common formats; they do not reproduce any publisher's or employer's test.
+questions:
+- id: rec-num-001
+  categories:
+  - numerical-reasoning
+  difficulty: beginner
+  stem: A server handles 1,200 requests per minute. How many requests per second is that?
+  options:
+  - '20'
+  - '12'
+  - '120'
+  - '2'
+  answer: A
+  explanation: 1,200 / 60 = 20.
+- id: rec-num-002
+  categories:
+  - numerical-reasoning
+  difficulty: intermediate
+  stem: A yearly plan costs 960 €. With a 25% discount on the yearly price, what is the monthly equivalent?
+  options:
+  - 60 €
+  - 80 €
+  - 70 €
+  - 65 €
+  answer: A
+  explanation: 960 × 0.75 = 720 € per year, and 720 / 12 = 60 € per month.
+- id: rec-num-003
+  categories:
+  - numerical-reasoning
+  difficulty: intermediate
+  stem: A 600 GB backup is copied at 200 MB/s. About how long does it take? (1 GB = 1,000 MB)
+  options:
+  - 50 minutes
+  - 30 minutes
+  - 5 minutes
+  - 3 hours
+  answer: A
+  explanation: 600,000 MB / 200 MB/s = 3,000 s = 50 minutes.
+- id: rec-num-004
+  categories:
+  - numerical-reasoning
+  difficulty: beginner
+  stem: A disk is 70% full with 350 GB used. What is its total capacity?
+  options:
+  - 500 GB
+  - 420 GB
+  - 455 GB
+  - 600 GB
+  answer: A
+  explanation: 350 / 0.70 = 500 GB.
+- id: rec-log-001
+  categories:
+  - logical-reasoning
+  difficulty: intermediate
+  stem: 'Deployment order rules: C before A, B after A, D after B. Which order is valid?'
+  options:
+  - C, A, B, D
+  - A, C, B, D
+  - C, B, A, D
+  - C, A, D, B
+  answer: A
+  explanation: Only C, A, B, D satisfies all three rules.
+  distractor_explanations:
+    B: A comes before C.
+    C: B comes before A.
+    D: D comes before B.
+- id: rec-log-002
+  categories:
+  - logical-reasoning
+  difficulty: intermediate
+  stem: What comes next? 2, 6, 12, 20, 30, ?
+  options:
+  - '42'
+  - '40'
+  - '36'
+  - '44'
+  answer: A
+  explanation: 'The differences are 4, 6, 8, 10, so the next difference is 12: 30 + 12 = 42 (each term is n × (n+1)).'
+- id: rec-log-003
+  categories:
+  - logical-reasoning
+  difficulty: beginner
+  stem: All servers in rack A run Linux. Server S runs Windows. What can you conclude?
+  options:
+  - Server S is not in rack A
+  - Server S is in rack A
+  - Rack A has no Windows licence
+  - Nothing can be concluded
+  answer: A
+  explanation: If S were in rack A it would run Linux. It does not, so it is not in rack A.
+- id: rec-verb-001
+  categories:
+  - verbal-reasoning
+  difficulty: beginner
+  stem: Compiler is to source code as oven is to …
+  options:
+  - Dough
+  - Kitchen
+  - Heat
+  - Chef
+  answer: A
+  explanation: A compiler transforms source code into a program; an oven transforms dough into bread.
+- id: rec-verb-002
+  categories:
+  - verbal-reasoning
+  difficulty: intermediate
+  type: true_false_undetermined
+  context: The team migrated its build pipeline to a new CI system in March. Since the migration, average build
+    time has fallen from 14 to 9 minutes.
+  stem: 'Statement: the new CI system is cheaper than the old one.'
+  options:
+  - 'True'
+  - 'False'
+  - Cannot be determined
+  answer: C
+  explanation: The passage only talks about build time. Nothing is said about cost.
+- id: rec-verb-003
+  categories:
+  - verbal-reasoning
+  difficulty: intermediate
+  type: true_false_undetermined
+  context: Every production deployment requires approval from two reviewers. Hotfixes are production deployments.
+  stem: 'Statement: a hotfix can be deployed with one approval.'
+  options:
+  - 'True'
+  - 'False'
+  - Cannot be determined
+  answer: B
+  explanation: Hotfixes are production deployments, which always need two approvals.
+- id: rec-abs-001
+  categories:
+  - abstract-reasoning
+  difficulty: intermediate
+  stem: 'Each step adds one side to the shape: triangle, square, pentagon, … What is the 6th shape?'
+  options:
+  - Octagon
+  - Hexagon
+  - Heptagon
+  - Nonagon
+  answer: A
+  explanation: 'Shape n has n + 2 sides: the 6th has 8 sides, an octagon.'
+- id: rec-att-001
+  categories:
+  - attention
+  difficulty: beginner
+  stem: 'How many times does the digit 7 appear in: 7172 4777 1707 2771?'
+  options:
+  - '8'
+  - '7'
+  - '9'
+  - '6'
+  answer: A
+  explanation: 7172 → 2, 4777 → 3, 1707 → 1, 2771 → 2. Total 8.
+- id: rec-sjt-001
+  categories:
+  - situational-judgment
+  difficulty: intermediate
+  type: situational
+  stem: A teammate's change, merged last night, breaks the build for everyone. They are offline until tomorrow.
+    What is the most effective response?
+  options:
+  - Confirm the cause, revert the change so others are unblocked, and leave the teammate a clear note
+  - Wait until the teammate is back
+  - Fix their code yourself without telling anyone
+  - Report the teammate to the manager
+  answer: A
+  explanation: Unblocking the team quickly while keeping the author informed is usually the expected behaviour.
+    Context (team conventions) can change the best answer.
+- id: rec-sjt-002
+  categories:
+  - situational-judgment
+  difficulty: intermediate
+  type: situational
+  stem: Halfway through a task you realise your estimate was about half of the real effort. What do you do?
+  options:
+  - Tell your lead now, with a new estimate and options (reduce scope, add help, move the date)
+  - Work extra hours silently to meet the date
+  - Wait until the deadline to mention it
+  - Deliver an incomplete version without saying so
+  answer: A
+  explanation: Early, transparent communication with options lets the team decide. Surprises at the deadline cost
+    trust.

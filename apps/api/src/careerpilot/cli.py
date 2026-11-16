@@ -46,13 +46,90 @@ async def _create_admin(email: str, display_name: str) -> int:
     return 0
 
 
+async def _seed() -> int:
+    import json
+
+    import careerpilot.models  # noqa: F401
+    from careerpilot.modules.content.seed import seed_content
+    from careerpilot.modules.taxonomy.seed import seed_taxonomy
+
+    async with SessionFactory() as db:
+        taxonomy = await seed_taxonomy(db)
+        content = await seed_content(db)
+    q = content["questions"]
+    print(
+        json.dumps(
+            {
+                "taxonomy": taxonomy,
+                "sources": content["sources"],
+                "tests": content["tests"],
+                "questions": {k: q[k] for k in ("parsed", "created", "updated", "unchanged", "duplicates")},
+            }
+        )
+    )
+    return 0
+
+
+async def _import_captures(email: str, path: str) -> int:
+    import json
+
+    import careerpilot.models  # noqa: F401
+    from careerpilot.modules.content.seed import import_captures
+
+    async with SessionFactory() as db:
+        user = await get_by_email(db, email)
+        if user is None:
+            print(f"Error: no user with email {email}", file=sys.stderr)
+            return 1
+        result = await import_captures(db, owner_id=user.id, path=path)
+    r = result["import"]
+    print(
+        json.dumps(
+            {
+                "created": r["created"],
+                "updated": r["updated"],
+                "unchanged": r["unchanged"],
+                "duplicates": r["duplicates"] + r["near_duplicates"],
+                "errors": r["error_count"],
+                "unknown_categories": r["unknown_categories"],
+                "collections": result["collections"],
+            }
+        )
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="careerpilot")
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("create-admin", help="create an admin account, or promote an existing user")
     p.add_argument("--email", required=True)
     p.add_argument("--name", default="Admin")
+    sub.add_parser("seed", help="taxonomy, sources, original questions and curated tests (idempotent)")
+    c = sub.add_parser("import-captures", help="import your PRIVATE captured tests (visible only to you)")
+    c.add_argument("--owner", required=True, help="email of the account that owns the captures")
+    c.add_argument(
+        "--path",
+        default=os.environ.get("PRIVATE_CONTENT_DIR") or "",
+        help="folder with the capture YAML files (default: $PRIVATE_CONTENT_DIR)",
+    )
     args = parser.parse_args(argv)
+
+    async def run(coro: object) -> int:
+        try:
+            return await coro  # type: ignore[misc, no-any-return]
+        finally:
+            await engine.dispose()
+
+    if args.command == "seed":
+        return asyncio.run(run(_seed()))
+    if args.command == "import-captures":
+        if not args.path:
+            parser.error("--path is required (or set PRIVATE_CONTENT_DIR)")
+        from careerpilot.core.config import get_settings
+
+        get_settings().private_content_dir = args.path  # allow the importer to read this folder
+        return asyncio.run(run(_import_captures(args.owner, args.path)))
 
     if args.command == "create-admin":
 

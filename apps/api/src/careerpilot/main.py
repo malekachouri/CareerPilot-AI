@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import careerpilot.models  # noqa: F401  (all ORM models registered before first use)
 from careerpilot import __version__
 from careerpilot.core.config import get_settings
 from careerpilot.core.db import engine
@@ -16,8 +17,13 @@ from careerpilot.core.logging import RequestContextMiddleware, configure_logging
 from careerpilot.core.metrics import MetricsMiddleware, metrics_endpoint
 from careerpilot.core.valkey import close_valkey
 from careerpilot.modules.admin.api import router as admin_router
+from careerpilot.modules.assessments.api import router as tests_router
 from careerpilot.modules.auth.api import router as auth_router
+from careerpilot.modules.content.api import admin as content_admin_router
+from careerpilot.modules.content.api import router as content_router
+from careerpilot.modules.generator.api import router as generator_router
 from careerpilot.modules.health.api import router as health_router
+from careerpilot.modules.taxonomy.api import router as taxonomy_router
 
 API_PREFIX = "/api/v1"
 
@@ -56,6 +62,11 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(admin_router, prefix=API_PREFIX)
+    app.include_router(taxonomy_router, prefix=API_PREFIX)
+    app.include_router(content_router, prefix=API_PREFIX)
+    app.include_router(content_admin_router, prefix=API_PREFIX)
+    app.include_router(tests_router, prefix=API_PREFIX)
+    app.include_router(generator_router, prefix=API_PREFIX)
     app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
     return app
 

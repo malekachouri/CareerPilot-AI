@@ -38,6 +38,25 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = Field(default_factory=list)
 
+    # --- Content import -------------------------------------------------------------------------------
+    # Local folders the importer may read (the repo's public `content/`, the private captures clone).
+    content_dirs: list[str] = Field(default_factory=lambda: ["../../content"])
+    private_content_dir: str | None = None
+    # Optional token (free) to raise GitHub's anonymous API rate limit. Never logged.
+    github_token: SecretStr | None = None
+    github_api_url: str = "https://api.github.com"
+    github_raw_url: str = "https://raw.githubusercontent.com"
+    import_max_files: int = 200
+    import_max_file_bytes: int = 5 * 1024 * 1024
+    # True when the instance is operated commercially: non-commercial (NC) sources become link-only.
+    commercial_mode: bool = False
+
+    # --- Local LLM (question generator) ----------------------------------------------------------------
+    llm_provider: Literal["ollama", "none"] = "ollama"
+    ollama_url: str = "http://localhost:11434"
+    llm_model: str = "qwen3:4b"
+    llm_timeout_seconds: float = 300.0
+
     @model_validator(mode="after")
     def _check_production_safety(self) -> Settings:
         if self.env == "prod":

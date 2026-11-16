@@ -58,14 +58,63 @@ async def _database() -> AsyncIterator[None]:
 async def _clean_state() -> AsyncIterator[None]:
     from sqlalchemy import text
 
-    from careerpilot.core.db import SessionFactory
+    import careerpilot.models  # noqa: F401
+    from careerpilot.core.db import Base, SessionFactory
+    from careerpilot.core.jobs import set_dispatcher
+    from careerpilot.core.llm import set_llm_override
     from careerpilot.core.valkey import get_valkey
+    from careerpilot.tasks import TASKS
 
     await get_valkey().flushdb()
+    tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
     async with SessionFactory() as db:
-        await db.execute(text("TRUNCATE audit_log, users CASCADE"))
+        await db.execute(text(f"TRUNCATE {tables} CASCADE"))
         await db.commit()
+
+    async def inline(name: str, kwargs: dict[str, object]) -> None:
+        await TASKS[name](**kwargs)  # type: ignore[operator]
+
+    set_dispatcher(inline)  # background jobs run in-process, deterministically
     yield
+    set_dispatcher(None)
+    set_llm_override(None)
+
+
+@pytest.fixture
+async def taxonomy() -> None:
+    from careerpilot.core.db import SessionFactory
+    from careerpilot.modules.taxonomy.seed import seed_taxonomy
+
+    async with SessionFactory() as db:
+        await seed_taxonomy(db)
+
+
+@pytest.fixture
+async def content(taxonomy: None) -> None:
+    """Taxonomy + the repository's original questions and curated tests (content/)."""
+    from careerpilot.core.db import SessionFactory
+    from careerpilot.modules.content.seed import seed_content
+
+    async with SessionFactory() as db:
+        await seed_content(db)
+
+
+async def login_as(client: httpx.AsyncClient, email: str, role: str = "learner") -> None:
+    """Register (if needed) and log in; optionally promote the user."""
+    from sqlalchemy import update
+
+    from careerpilot.core.db import SessionFactory
+    from careerpilot.modules.users.models import User
+
+    client.cookies.clear()
+    r = await register(client, email=email)
+    if r.status_code == 409:
+        r = await client.post("/api/v1/auth/login", json={"email": email, "password": STRONG_PASSWORD})
+    assert r.status_code in (200, 201), r.text
+    if role != "learner":
+        async with SessionFactory() as db:
+            await db.execute(update(User).where(User.email == email).values(role=role))
+            await db.commit()
 
 
 @pytest.fixture

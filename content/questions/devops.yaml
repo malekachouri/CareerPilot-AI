@@ -1,0 +1,307 @@
+# CareerPilot original practice questions — DevOps. Licence: CC BY 4.0 (see content/README.md).
+# Provenance: original. Each item: stem, options, answer (option ids), explanation, why-wrong per option.
+questions:
+- id: dvo-linux-001
+  categories:
+  - linux
+  difficulty: beginner
+  stem: Which command shows the processes currently using the most CPU, updated live?
+  options:
+  - top
+  - ps aux --sort=pid
+  - lsof
+  - uptime
+  answer: A
+  explanation: '`top` (or `htop`) refreshes continuously and sorts by CPU usage by default.'
+  distractor_explanations:
+    B: '`ps` prints a single snapshot, and sorting by PID says nothing about CPU usage.'
+    C: '`lsof` lists open files, not CPU consumption.'
+    D: '`uptime` shows load averages for the whole system, not individual processes.'
+- id: dvo-linux-002
+  categories:
+  - linux
+  - troubleshooting
+  difficulty: intermediate
+  stem: '`df -h` shows a filesystem at 100% but `du -sh /*` adds up to much less. What is the most likely cause?'
+  options:
+  - Deleted files are still held open by a running process
+  - The filesystem is mounted read-only
+  - '`du` cannot read files owned by root'
+  - The inode table is corrupted
+  answer: A
+  explanation: When a process keeps a deleted file open (often a log file), the space is not released, so `df` counts
+    it but `du` cannot see it. Find it with `lsof +L1` and restart or signal the process.
+  distractor_explanations:
+    B: A read-only mount does not change how space is counted.
+    C: Run as root, `du` reads everything. A permission problem would show errors, not missing space.
+    D: Inode problems show up with `df -i` and fsck errors, not as a gap between df and du.
+- id: dvo-linux-003
+  categories:
+  - linux
+  difficulty: intermediate
+  stem: A file has permissions `-rwxr-x---`. What is the octal mode?
+  options:
+  - '750'
+  - '754'
+  - '640'
+  - '770'
+  answer: A
+  explanation: Owner rwx = 7, group r-x = 5, others --- = 0, so 750.
+- id: dvo-net-001
+  categories:
+  - networking
+  difficulty: beginner
+  stem: Which DNS record type maps a hostname to an IPv6 address?
+  options:
+  - AAAA
+  - A
+  - CNAME
+  - PTR
+  answer: A
+  explanation: AAAA records hold IPv6 addresses; A records hold IPv4 addresses.
+  distractor_explanations:
+    B: An A record holds an IPv4 address.
+    C: CNAME aliases one name to another name.
+    D: PTR is used for reverse lookups (IP to name).
+- id: dvo-net-002
+  categories:
+  - networking
+  - cloud-security
+  difficulty: intermediate
+  stem: How many IPv4 addresses does the CIDR block 10.0.4.0/22 contain?
+  options:
+  - '1024'
+  - '512'
+  - '2048'
+  - '256'
+  answer: A
+  explanation: 'A /22 leaves 32 − 22 = 10 host bits: 2^10 = 1024 addresses (10.0.4.0 – 10.0.7.255). Cloud providers
+    reserve a few of them in each subnet.'
+- id: dvo-docker-001
+  categories:
+  - docker
+  difficulty: beginner
+  stem: What does `docker compose down -v` do?
+  options:
+  - Stops and removes the containers and networks, and also deletes the named volumes of the project
+  - Only stops the containers, keeping everything else
+  - Removes the images built for the project
+  - Prints verbose logs while stopping
+  answer: A
+  explanation: '`-v` (`--volumes`) also removes the named volumes declared in the Compose file, so persistent data
+    is lost. Without it, volumes are kept.'
+- id: dvo-docker-002
+  categories:
+  - docker
+  - devsecops
+  difficulty: intermediate
+  stem: Which Dockerfile change most reduces the attack surface of a production image?
+  options:
+  - Use a multi-stage build and copy only the runtime artifacts into a slim base image
+  - Add `apt-get upgrade` at the end of the build stage only
+  - Use the `latest` tag of the base image
+  - Run the build with `--no-cache`
+  answer: A
+  explanation: Multi-stage builds keep compilers, package managers and build secrets out of the final image, so
+    fewer packages can contain vulnerabilities.
+  distractor_explanations:
+    B: Upgrading only the build stage does not change the final image.
+    C: '`latest` makes builds unreproducible and can silently change the base.'
+    D: '`--no-cache` affects build speed and freshness, not what ends up in the image.'
+- id: dvo-docker-003
+  categories:
+  - docker
+  difficulty: intermediate
+  stem: Why should `COPY requirements.txt` and the dependency install come before `COPY . .` in a Dockerfile?
+  options:
+  - So the dependency layer stays cached when only application code changes
+  - Because COPY . . would overwrite requirements.txt
+  - Because Docker builds layers in reverse order
+  - It is required for multi-stage builds
+  answer: A
+  explanation: Each instruction is a cached layer. Copying the lockfile first means code edits do not invalidate
+    the slow dependency-install layer.
+- id: dvo-k8s-001
+  categories:
+  - kubernetes
+  - troubleshooting
+  difficulty: intermediate
+  stem: A pod is in `CrashLoopBackOff`. Which command shows the logs of the previous, crashed container?
+  options:
+  - kubectl logs <pod> --previous
+  - kubectl describe node
+  - kubectl get events --watch
+  - kubectl top pod <pod>
+  answer: A
+  explanation: '`--previous` (`-p`) prints the logs of the last terminated container instance, which is where the
+    crash reason usually is.'
+  distractor_explanations:
+    B: Node details rarely explain an application crash.
+    C: Events show restarts and back-off, not the application's own error output.
+    D: '`top` shows current resource usage, not why it crashed.'
+- id: dvo-k8s-002
+  categories:
+  - kubernetes
+  difficulty: intermediate
+  stem: What happens when a pod's readinessProbe starts failing?
+  options:
+  - The pod is removed from the Service's endpoints but is not restarted
+  - The container is restarted
+  - The pod is deleted and rescheduled
+  - The node is cordoned
+  answer: A
+  explanation: Readiness controls whether traffic is sent to the pod. Restarting on failure is the job of the livenessProbe.
+  distractor_explanations:
+    B: Restarts are triggered by a failing livenessProbe.
+    C: Probes never delete pods.
+    D: Probes act on pods, not nodes.
+- id: dvo-k8s-003
+  categories:
+  - kubernetes
+  - cloud-security
+  difficulty: advanced
+  stem: Which two objects grant a ServiceAccount read access to Pods in a single namespace? (select all that apply)
+  type: mcq_multi
+  options:
+  - Role
+  - RoleBinding
+  - ClusterRoleBinding
+  - NetworkPolicy
+  - PodDisruptionBudget
+  answer:
+  - A
+  - B
+  explanation: A Role defines namespaced permissions (get/list/watch on pods) and a RoleBinding attaches it to the
+    ServiceAccount in that namespace.
+  distractor_explanations:
+    C: A ClusterRoleBinding grants access in every namespace, which is broader than needed.
+    D: NetworkPolicy controls network traffic, not API permissions.
+    E: PodDisruptionBudget limits voluntary evictions.
+- id: dvo-k8s-004
+  categories:
+  - kubernetes
+  difficulty: beginner
+  stem: Which Kubernetes object gives a stable virtual IP and DNS name to a set of pods?
+  options:
+  - Service
+  - Deployment
+  - ConfigMap
+  - ReplicaSet
+  answer: A
+- id: dvo-cicd-001
+  categories:
+  - cicd
+  difficulty: beginner
+  stem: What is the main benefit of the 'build once, deploy many' practice?
+  options:
+  - The exact artifact tested in staging is the one promoted to production
+  - Builds become faster
+  - Each environment can use different dependencies
+  - It removes the need for tests
+  answer: A
+  explanation: Rebuilding per environment can produce a different artifact (new dependency versions, different flags).
+    Promoting one immutable artifact keeps what you tested and what you ship identical.
+- id: dvo-cicd-002
+  categories:
+  - cicd
+  - gitops
+  difficulty: intermediate
+  stem: What is the main advantage of a blue-green deployment?
+  options:
+  - 'Rollback is almost instant: switch traffic back to the previous environment'
+  - It needs no extra infrastructure
+  - It tests new versions on a small share of users first
+  - It removes the need for database migrations
+  answer: A
+  explanation: Two full environments run side by side, and traffic switches between them. The cost is temporarily
+    doubled capacity.
+  distractor_explanations:
+    B: It needs a second full environment.
+    C: Gradual exposure describes a canary release.
+    D: Schema changes still need backward-compatible migrations.
+- id: dvo-gha-001
+  categories:
+  - github-actions
+  - devsecops
+  difficulty: advanced
+  stem: Why pin third-party GitHub Actions to a full commit SHA instead of a tag like `@v4`?
+  options:
+  - A tag can be moved to malicious code; a commit SHA is immutable
+  - Tags are not supported for actions from the Marketplace
+  - SHAs make the workflow run faster
+  - GitHub requires it for public repositories
+  answer: A
+  explanation: Tags are mutable references. Several supply-chain attacks re-pointed popular action tags; pinning
+    the SHA (with a comment for the version) prevents that.
+- id: dvo-tf-001
+  categories:
+  - terraform
+  difficulty: intermediate
+  stem: Why use a remote backend with state locking for Terraform/OpenTofu in a team?
+  options:
+  - To share one state safely and prevent two concurrent applies from corrupting it
+  - To make `plan` run faster
+  - Because local state cannot store outputs
+  - To encrypt the provider plugins
+  answer: A
+  explanation: A remote backend (S3, GCS, Azure Blob, HTTP…) gives a single source of truth; locking stops simultaneous
+    runs from writing conflicting state.
+- id: dvo-tf-002
+  categories:
+  - terraform
+  - devsecops
+  difficulty: intermediate
+  stem: Where do sensitive values used by Terraform (e.g. a database password) end up even when marked `sensitive
+    = true`?
+  options:
+  - In the state file, in plain text, so the state backend must be encrypted and access-controlled
+  - 'Nowhere: sensitive values are never persisted'
+  - Only in the plan output
+  - In the provider's lock file
+  answer: A
+  explanation: '`sensitive` only hides values in CLI output. The state still stores them, so protect the backend
+    (encryption, IAM) or fetch secrets at runtime from a secret manager.'
+- id: dvo-ans-001
+  categories:
+  - ansible
+  difficulty: beginner
+  stem: What does it mean that an Ansible task is idempotent?
+  options:
+  - Running it again on an already-configured host makes no further changes
+  - It runs on all hosts at the same time
+  - It cannot fail
+  - It is executed only once per playbook
+  answer: A
+  explanation: Idempotent modules check the current state and only act when it differs from the desired state (reported
+    as `ok` instead of `changed`).
+- id: dvo-mon-001
+  categories:
+  - monitoring
+  difficulty: intermediate
+  stem: Which PromQL expression gives the per-second rate of HTTP 5xx responses over the last 5 minutes?
+  options:
+  - sum(rate(http_requests_total{status=~"5.."}[5m]))
+  - sum(http_requests_total{status=~"5.."})
+  - rate(sum(http_requests_total{status="5xx"})[5m])
+  - increase(http_requests_total[5m]) / 300
+  answer: A
+  explanation: '`rate()` must be applied to the raw counter over a range before aggregating with `sum()`. The regex
+    matcher `=~"5.."` selects every 5xx status.'
+  distractor_explanations:
+    B: Without rate() you get the total count since the process started.
+    C: Aggregating before rate() breaks counter-reset handling; also `"5xx"` matches nothing literally.
+    D: This ignores the status filter and counts every request.
+- id: dvo-sec-001
+  categories:
+  - devsecops
+  - github-actions
+  difficulty: intermediate
+  stem: What is the most secure way for a CI pipeline to obtain cloud deployment credentials?
+  options:
+  - 'OIDC federation: the CI job exchanges its identity token for short-lived cloud credentials'
+  - Store a long-lived access key as a repository secret
+  - Commit an encrypted key file to the repository
+  - Use the personal credentials of the team lead
+  answer: A
+  explanation: 'With OIDC there is no stored secret to leak or rotate: credentials are issued per job and expire
+    quickly, and the cloud role can be restricted to a given repository and branch.'

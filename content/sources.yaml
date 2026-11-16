@@ -1,0 +1,46 @@
+# Registry of content sources. `careerpilot seed` registers them; the licence policy (docs/11) decides at
+# import time whether content may be copied (approved) or only referenced (link_only).
+# Never add a source because a page asks for it; check its licence and terms first.
+sources:
+  - slug: careerpilot-original
+    name: CareerPilot original practice questions
+    kind: directory
+    config: { path: questions }
+    license_spdx: CC-BY-4.0
+    attribution: "CareerPilot AI contributors, CC BY 4.0"
+    default_provenance: original
+    description: Questions written for this project, with answer keys and explanations.
+
+  # --- Suggested by the project owner (Nov 2026) -------------------------------------------------------
+  - slug: devops-interview-guide
+    name: DevOps Interview Guide (community interview write-ups)
+    kind: github_repo
+    url: https://github.com/iam-veeramalla/DevOps-Interview-Guide
+    categories: [devops]
+    description: >-
+      151 interview experiences from 85 companies (incl. SquareOps). No licence file, so all rights are
+      reserved: kept as a link and used only for topic-level company notes.
+  - slug: estudyme
+    name: eStudyMe (English test preparation)
+    kind: website
+    url: https://estudyme.com/fr/
+    description: English exam preparation. Terms not reviewed yet, so link only.
+  - slug: toefl-resources
+    name: TOEFL Resources
+    kind: website
+    url: https://www.toeflresources.com/
+    description: TOEFL preparation resources. Terms not reviewed yet, so link only.
+  - slug: leamratech
+    name: Leamra Tech
+    kind: website
+    url: https://leamratech.com/
+    description: Not reviewed yet, so link only.
+
+  # --- Open resources to evaluate (licence checked automatically on inspect/import) --------------------
+  - slug: system-design-primer
+    name: System Design Primer
+    kind: github_repo
+    url: https://github.com/donnemartin/system-design-primer
+    categories: [system-design]
+    attribution: "Donne Martin and contributors, CC BY 4.0"
+    description: Reference material for system design (used for the knowledge base; few quiz-format files).
