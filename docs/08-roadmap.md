@@ -16,7 +16,7 @@ and by technical dependency. Each phase ends with a demo-able increment, green C
 | **8+ — Extensions** | Additional career tracks, contributor community features, mobile PWA polish, optional OIDC/Keycloak, optional GPU serving with vLLM, extract Job Radar into its own service if needed | — |
 
 ### Phase 0 — delivered vs. planned
-Delivered: monorepo; Docker Compose (Postgres 16 + pgvector, Valkey 8, one-shot migrations, API, Celery
+Delivered: monorepo; Docker Compose (Postgres 16 + pgvector, Valkey 9, one-shot migrations, API, Celery
 worker and beat with the five queues, web); FastAPI core (settings with production safety checks, problem+json
 errors, structured JSON logs with request ids, Prometheus `/metrics`, `/healthz` and `/readyz`); built-in auth
 (Argon2id, server-side Valkey sessions, CSRF, login rate limiting, session rotation and revocation, audit log);

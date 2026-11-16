@@ -36,7 +36,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U careerpilot" --health-interval 5s --health-timeout 3s --health-retries 20
       valkey:
-        image: valkey/valkey:8-alpine
+        image: valkey/valkey:9-alpine
         ports: ["6379:6379"]
         options: >-
           --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20

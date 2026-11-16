@@ -73,7 +73,7 @@ obligation on our code. **GPL-3.0** CLIs (Ansible, hadolint, espeak-ng, phonemiz
 | PostgreSQL 16 | Main DB, full-text search | PostgreSQL Licence | 🟢 | 1 vCPU, 512 MB–2 GB RAM; disk 5–20 GB | €0 | Image `pgvector/pgvector:pg16` | — |
 | pgvector | Vector search (HNSW) | PostgreSQL Licence | 🟢 | inside Postgres | €0 | `CREATE EXTENSION vector` | Qdrant (Apache-2.0), ChromaDB (Apache-2.0), FAISS (MIT) |
 | pg_trgm | Fuzzy matching | PostgreSQL Licence | 🟢 | inside Postgres | €0 | `CREATE EXTENSION pg_trgm` | — |
-| **Valkey 8** | Cache, sessions, rate limits, Celery broker | BSD-3 | 🟢 | 64–256 MB RAM | €0 | Image `valkey/valkey:8` | Redis 8 (AGPL-3.0 / RSAL / SSPL tri-licence), KeyDB (BSD-3, low activity) |
+| **Valkey 9** | Cache, sessions, rate limits, Celery broker | BSD-3 | 🟢 | 64–256 MB RAM | €0 | Image `valkey/valkey:9-alpine` | Redis 8 (AGPL-3.0 / RSAL / SSPL tri-licence), KeyDB (BSD-3, low activity) |
 | Local filesystem volume | Audio, imports, exports | — | 🟢 | disk | €0 | Docker volume | SeaweedFS (Apache-2.0), Garage (AGPL-3.0) for S3-compatible storage; MinIO (AGPL-3.0, community edition reduced in 2025 — not chosen) |
 
 Redis note: Redis 7.4+ moved to RSALv2/SSPLv1 (not OSI); Redis 8 added AGPLv3 as an option. Valkey (Linux Foundation fork) stays BSD-3 and is protocol-compatible, so the code works with either.
