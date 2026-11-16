@@ -59,7 +59,7 @@ Sessions live in Valkey, not Postgres.
 | Table | Key columns |
 |-------|-------------|
 | `sources` | id, name, kind (`github_repo`/`oer_site`/`dataset`/`official_doc`/`internal`/`llm`), url, license_spdx, license_url, attribution_text, commercial_use_allowed bool, derivatives_allowed bool, share_alike bool, reviewed_by, reviewed_at, status (`approved`/`link_only`/`rejected`), notes |
-| `questions` | id, current_version_id, provenance (`official_public`/`community_licensed`/`ai_generated`/`user_created`), source_id, source_ref (path/line/commit SHA), created_by, status (`draft`/`in_review`/`published`/`retired`), verification_status |
+| `questions` | id, current_version_id, provenance (`official_public`/`community_licensed`/`ai_generated`/`user_created`/`personal_capture`), visibility (`public`/`private`), owner_id, source_id, source_ref (path/line/commit SHA), created_by, status (`draft`/`in_review`/`published`/`retired`), verification_status |
 | `question_versions` | id, question_id, version, type, language, stem_md, options jsonb (`[{id, text_md}]`), answer_key jsonb (correct option ids / regex / numeric tolerance / test cases ref), explanation_md, distractor_explanations jsonb, rubric jsonb (open-ended), difficulty smallint, rating real (calibrated, default by difficulty), time_limit_s, content_hash, embedding vector(384), search_tsv tsvector, created_at |
 | `question_skills` | question_version_id, skill_id, weight |
 | `question_tags` | question_id, tag_id |
@@ -67,6 +67,8 @@ Sessions live in Valkey, not Postgres.
 | `import_jobs` | id, source_id, format, file_ref, status, stats jsonb (rows, valid, invalid, duplicates), report jsonb, created_by, started_at, finished_at |
 | `review_items` | id, entity_type, entity_id, reason (`import`/`ai_generated`/`contribution`/`user_report`), status, reviewer_id, decision_note |
 | `content_reports` | id, user_id, question_id, kind (`wrong_answer`/`licence`/`offensive`/`other`), message, status |
+
+Constraint: `CHECK (provenance <> 'personal_capture' OR visibility = 'private')`; repositories always filter on `visibility = 'public' OR owner_id = :current_user`.
 
 Indexes: `question_versions (content_hash)` unique per question; HNSW on `embedding` (cosine); GIN on `search_tsv`;
 GIN `pg_trgm` on stem for near-duplicate detection.

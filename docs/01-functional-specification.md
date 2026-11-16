@@ -59,6 +59,9 @@ Cross-cutting attributes on every content item:
 | HR / Behavioural | STAR method, motivation, conflict, leadership, salary negotiation |
 | Personality (practice) | Big-Five style self-assessment (IPIP public-domain items) |
 | Psychometric / Logic | numerical, verbal, abstract (procedurally generated matrices), sequences, deduction |
+| Verbal & reading | analogies, true/false/undetermined comprehension |
+| Software testing & QA | test types, defects vocabulary, coverage, release strategies |
+| Git & web basics | Git workflows, HTML/CSS/JS, React, Node.js (often in general dev tests) |
 
 ## 4. Module A — Interview Tests Hub
 
@@ -75,7 +78,8 @@ Cross-cutting attributes on every content item:
    each import is a job with preview, validation report, licence check, dedup and review queue.
 7. **Question management** — CRUD, versioning (edits create a new version; attempts reference the version they used),
    bulk tagging, retire/restore, duplicate detection (embedding similarity).
-8. **Results** — score, time per question, per-skill breakdown, comparison with own history, explanation access.
+8. **Personal question bank** — the user imports their own notes of tests they took (`personal_capture`), visible only to them. The coach can work on these items: it solves them, proposes an answer key that the user confirms, and explains. Captured tests often have no answer key, so keys start as `unverified`.
+9. **Results** — score, time per question, per-skill breakdown, comparison with own history, explanation access.
 
 ### Acceptance criteria (MVP)
 - A learner can take a 20-question timed MCQ test, refresh the browser mid-test without losing answers, and see a per-skill breakdown.
@@ -151,7 +155,8 @@ Level placement test → CEFR estimate per skill (Speaking/Listening/Reading/Wri
 5. **Saved searches & alerts** — in-app notifications, Web Push, optional e-mail via user-configured SMTP; digest or instant.
 6. **"Early discovery"** — company watchlist: poll a company's public ATS board directly (Greenhouse/Lever/Ashby/…) so new postings appear within the polling interval, often before aggregators.
 7. **Match score** — job ↔ profile similarity + skill gap list ("you match 7/10 required skills; missing: ArgoCD, Go") with a link to targeted prep.
-8. **Application tracker** — kanban: saved → applied → interview → offer/rejected, notes, dates.
+8. **Application kit** (idea taken from the MIT project ai-job-search, run on local models): evaluate a posting against the profile, tailor the CV (Markdown/LaTeX → PDF) and draft a cover letter. These are drafts that the user reviews, and nothing is ever sent automatically.
+9. **Application tracker** — kanban: saved → applied → interview → offer/rejected, notes, dates.
 
 ## 9. Module F — Career Analytics
 

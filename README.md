@@ -33,13 +33,14 @@ First career track: **DevOps / Cloud / AI Engineer**. The content model supports
 | [09 — Security](docs/09-security.md) | Threat model, controls, data protection (GDPR) |
 | [10 — Testing strategy](docs/10-testing-strategy.md) | Test pyramid, AI evaluation, CI gates |
 | [11 — Content & licensing policy](docs/11-content-licensing-policy.md) | Provenance labels, licence rules, takedown process |
+| [12 — Source review (Nov 2026)](docs/12-source-review.md) | Analysis of the owner's captured tests & suggested resources |
 | [Free & open-source stack](docs/FREE_AND_OPEN_SOURCE_STACK.md) | Every technology: licence, cost, resources, alternatives |
 
 ## Core principles
 
 1. **Free & open source first** — runs fully on a laptop with local models (Ollama). No paid API is required.
 2. **Honest content** — every question is labelled `official_public`, `community_licensed`, `ai_generated`
-   or `user_created`. We never present invented questions as a real company's recruitment test.
+   `user_created` or `personal_capture` (private). We never present invented questions as a real company's recruitment test.
 3. **Legal data sourcing** — official APIs, RSS feeds and public ATS endpoints only; licences and ToS recorded per source.
 4. **Modular monolith** — one FastAPI backend with strict module boundaries, one worker, one Next.js frontend.
    Easy to run locally, Kubernetes-ready later.
