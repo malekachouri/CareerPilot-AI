@@ -33,9 +33,11 @@ Observations:
 | Write or generate **original** questions for the same skills and formats (MCQ, scenario "which action should you take?", analogies, T/F/U) | ✅ labelled `ai_generated` or `user_created`; similarity to captures must be ≤ 0.85 |
 | Use the PDFs to calibrate difficulty and question style | ✅ internal and aggregate only |
 
-Planned private import format (Phase 1): `private_content/captures/<company>-<test>.yaml`, following the normal question
-schema plus `provenance: personal_capture`, `company`, `platform`, `taken_at` and `answer_key_status: unknown|proposed|confirmed`.
-A small parser can turn the PDFs' text layout ("Q1 — … / A. … B. …") into that YAML. The result stays local.
+**Storage decision (approved): a separate private repository.** Captures live in a private repo,
+`careerpilot-private-content`. This public repo holds only the code and the documentation. The app reads the captures
+from `PRIVATE_CONTENT_DIR`, which points to a local clone, and imports them as private items owned by the operator account.
+Each item follows the normal question schema, plus `provenance: personal_capture`, `visibility: private`, `company`,
+`platform`, `taken_at` and `answer_key_status: unknown|proposed|confirmed`.
 
 ## 2. Suggested links
 

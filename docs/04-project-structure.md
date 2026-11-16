@@ -55,7 +55,8 @@ CareerPilot-AI/
 │   ├── sandbox/                  # Piston config / custom runner, language packages, seccomp profiles
 │   └── validators/               # image with kubeconform, kube-linter, hadolint, actionlint, tflint, checkov, trivy, tofu
 │
-├── content/                      # seed content as reviewed files (version-controlled)
+├── content/                      # PUBLIC seed content only (licensed / original). Private captures live in the
+│                                 # separate private repo `careerpilot-private-content` (env PRIVATE_CONTENT_DIR)
 │   ├── schema/                   # JSON Schemas for question, challenge, english item, source
 │   ├── sources.yaml              # registry of content sources with licence metadata
 │   ├── questions/<domain>/*.yaml
