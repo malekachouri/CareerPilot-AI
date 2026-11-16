@@ -11,9 +11,21 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+  # Base images: security rebuilds of the same line are automatic; moving to a new runtime line
+  # (Python 3.x, Node major, Valkey/Postgres major) is a deliberate upgrade, done in its own PR with tests.
   - package-ecosystem: docker
     directories: ["/apps/api", "/apps/web"]
     schedule: { interval: weekly }
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker-compose
     directory: /
     schedule: { interval: weekly }
+    ignore:
+      - dependency-name: valkey/valkey
+        update-types: ["version-update:semver-major"]
+      - dependency-name: pgvector/pgvector
+        update-types: ["version-update:semver-major"]
