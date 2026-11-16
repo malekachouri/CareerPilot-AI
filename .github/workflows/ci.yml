@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Third-party actions are pinned to commit SHAs (tags can be moved); Dependabot keeps them current.
+  TRIVY_IMAGE: aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+  GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.30.1
+
+jobs:
+  api:
+    name: API · lint, types, tests, licences
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: careerpilot
+          POSTGRES_PASSWORD: careerpilot
+          POSTGRES_DB: careerpilot
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U careerpilot" --health-interval 5s --health-timeout 3s --health-retries 20
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://careerpilot:careerpilot@localhost:5432/careerpilot
+      VALKEY_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.32"
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+      - run: uv python install
+      - run: uv sync --locked
+      - name: Ruff (lint + format)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Mypy (strict)
+        run: uv run mypy
+      - name: Pytest (real Postgres + Valkey, runs the migrations)
+        run: uv run pytest -q
+      - name: Dependency licence allow-list
+        run: ./scripts/check_licenses.sh
+
+  web:
+    name: Web · lint, types, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: apps/web/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Dependency licence allow-list
+        run: pnpm licenses list --prod --json | node scripts/check-licenses.mjs
+
+  contract:
+    name: API contract · generated client is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.32"
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: apps/web/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: (cd apps/api && uv sync --locked) && (cd apps/web && pnpm install --frozen-lockfile)
+      - run: ./scripts/gen-api-client.sh
+      - name: Fail if the committed client differs from the API schema
+        run: git diff --exit-code -- apps/web/src/lib/api/
+
+  security:
+    name: Security · secrets, dependencies, IaC
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks scans the whole history (a secret deleted later is still leaked)
+      - name: Gitleaks (git history)
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" "$GITLEAKS_IMAGE" git /repo --redact --no-banner
+      - name: Trivy (lockfile CVEs, secrets, Dockerfile misconfigurations)
+        run: >-
+          docker run --rm -v "$PWD:/src:ro" "$TRIVY_IMAGE" fs --no-progress
+          --scanners vuln,secret,misconfig --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 /src
+
+  stack:
+    name: Stack · images, image scan, compose E2E
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build images
+        run: docker compose build
+      - name: Trivy image scan
+        run: |
+          for image in careerpilot-api:local careerpilot-web:local; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image --no-progress \
+              --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 "$image"
+          done
+      - name: Start stack
+        run: |
+          cp .env.example .env
+          docker compose up -d --no-build --wait --wait-timeout 180
+          docker compose ps
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: apps/web/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: E2E smoke (register, dashboard, logout, login)
+        working-directory: apps/web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+          BASE_URL=http://localhost:3000 pnpm e2e
+      - name: Worker processes a task
+        run: >-
+          docker compose exec -T api python -c
+          "from careerpilot.worker import ping; assert ping.delay().get(timeout=30) == 'pong'; print('worker OK')"
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail 200

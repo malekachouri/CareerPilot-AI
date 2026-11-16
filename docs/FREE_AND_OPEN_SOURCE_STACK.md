@@ -31,6 +31,7 @@ obligation on our code. **GPL-3.0** CLIs (Ansible, hadolint, espeak-ng, phonemiz
 | shadcn/ui + Radix UI | Accessible components (copied into repo) | MIT | 🟢 | — | €0 | `npx shadcn add` | Headless UI (MIT), Mantine (MIT) |
 | TanStack Query | Server-state caching | MIT | 🔵 | — | €0 | npm | SWR (MIT) |
 | openapi-typescript / openapi-fetch | Typed client from OpenAPI | MIT | 🟢 | — | €0 | npm (CI generation) | orval (MIT) |
+| playwright (Node) | E2E smoke test in CI | Apache-2.0 | 🟢 | Chromium ~150 MB (CI only) | €0 | `pnpm exec playwright install chromium` | — |
 | next-intl | i18n EN/FR | MIT | 🟢 | — | €0 | npm | react-i18next (MIT) |
 | Monaco Editor | Code editor | MIT | 🟢 | ~5 MB bundle (lazy-loaded) | €0 | `@monaco-editor/react` | CodeMirror 6 (MIT, lighter) |
 | Recharts | Charts | MIT | 🟢 | — | €0 | npm | Apache ECharts (Apache-2.0) |
@@ -61,6 +62,9 @@ obligation on our code. **GPL-3.0** CLIs (Ansible, hadolint, espeak-ng, phonemiz
 | lingua-py | Language detection | Apache-2.0 | 🟢 | ~100 MB with all models (load subset) | €0 | uv | fastText lid (MIT/CC BY-SA model) |
 | fsrs (py-fsrs) | Spaced repetition | MIT | 🟢 | — | €0 | uv | SM-2 (algorithm, free) |
 | pypdf | PDF text extraction (licensed imports) | BSD-3 | 🟢 | — | €0 | uv | pdfplumber (MIT) |
+| redis (redis-py) | Valkey client (protocol-compatible) | MIT | 🟢 | — | €0 | uv | valkey-py (MIT) |
+| prometheus-client | `/metrics` endpoint | Apache-2.0 | 🟢 | — | €0 | uv | OpenTelemetry metrics |
+| email-validator | E-mail validation (Pydantic `EmailStr`) | Unlicense | 🟢 | — | €0 | uv | — |
 
 ## 3. Data stores
 
@@ -167,11 +171,12 @@ VOA Learning English (US public domain, verify per item), Simple English Wikiped
 
 | Tech | Purpose | Licence | Status | Resources | Cost | Install | Alternatives |
 |------|---------|---------|--------|-----------|------|---------|--------------|
-| Trivy | Vuln/IaC/secret/licence scanning | Apache-2.0 | 🔵 (Aqua commercial — not used) | ~500 MB DB cache | €0 | `aquasecurity/trivy-action` / binary | Grype (Apache-2.0) |
+| Trivy (pinned 0.75.0 by image digest) | Vuln/IaC/secret/licence scanning | Apache-2.0 | 🔵 (Aqua commercial — not used) | ~500 MB DB cache | €0 | `aquasecurity/trivy-action` / binary | Grype (Apache-2.0) |
 | SonarQube Community Build | Code quality/SAST | LGPL-3.0 | 🔵 (Developer/Enterprise editions paid — not used) | **2–4 GB RAM** + Postgres; run on demand, not 24/7 | €0 | Compose profile `quality` | SonarCloud (free for public repos, 🟡) |
 | Semgrep CE | SAST | Engine LGPL-2.1; registry rules under Semgrep Rules Licence (internal use OK) | 🔵 | small | €0 | uv tool / action | Opengrep (LGPL-2.1 fork) |
 | Bandit | Python SAST | Apache-2.0 | 🟢 | tiny | €0 | uv | Ruff `S` rules |
 | gitleaks | Secret detection | MIT | 🟢 | tiny | €0 | pre-commit + action | TruffleHog (AGPL-3.0) |
+| actionlint | GitHub Actions workflow lint (run on demand: `uvx --from actionlint-py actionlint`) | MIT | 🟢 | tiny | €0 | uvx | — |
 | pip-audit | Python CVEs | Apache-2.0 | 🟢 | tiny | €0 | uv tool | Trivy |
 | OWASP ZAP | DAST | Apache-2.0 | 🟢 | ~1 GB | €0 | Docker `zaproxy/zap-stable` | Nuclei (MIT) |
 | Syft | SBOM | Apache-2.0 | 🟢 | tiny | €0 | action | Trivy SBOM |
@@ -234,6 +239,15 @@ VOA Learning English (US public domain, verify per item), Simple English Wikiped
 
 **Minimum dev machine**: 4 cores, 16 GB RAM, 30 GB free disk, no GPU (run `core` + `ai` + one more profile at a time).
 **Comfortable**: 8 cores, 32 GB RAM.
+
+## 13b. Notes from Phase 0
+
+- **Supply chain**: GitHub Actions are pinned to commit SHAs and tools to versions or image digests (Trivy). Tags
+  can be moved by an attacker, as happened to some security-tool actions in 2026. Dependabot proposes updates weekly.
+- **sharp / libvips (LGPL-3.0)**: Next.js ships libvips unmodified and dynamically linked for image optimisation.
+  This is allowed as a reviewed exception in `apps/web/scripts/check-licenses.mjs`.
+- **uv in the API image** is installed from PyPI (`pip install uv==…`), not copied from the ghcr.io image, so the
+  build only needs PyPI access.
 
 ## 14. Rules for adding a dependency
 

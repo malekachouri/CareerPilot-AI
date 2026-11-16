@@ -5,7 +5,7 @@ and by technical dependency. Each phase ends with a demo-able increment, green C
 
 | Phase | Scope | Exit criteria |
 |-------|-------|---------------|
-| **0 — Foundations** | Monorepo skeleton, Docker Compose (Postgres+pgvector, Valkey, API, worker, web), FastAPI core (config, DB, errors, logging, OTel), Alembic, Next.js shell with auth pages, built-in auth + RBAC, CI (lint, type-check, unit tests, Trivy, gitleaks, licence check), `.env.example`, `FREE_AND_OPEN_SOURCE_STACK.md` kept current | `make dev` brings everything up on a 16 GB laptop; register/login works; CI green |
+| **0 — Foundations** ✅ done | Monorepo skeleton, Docker Compose (Postgres+pgvector, Valkey, API, worker, web), FastAPI core (config, DB, errors, logging, OTel), Alembic, Next.js shell with auth pages, built-in auth + RBAC, CI (lint, type-check, unit tests, Trivy, gitleaks, licence check), `.env.example`, `FREE_AND_OPEN_SOURCE_STACK.md` kept current | `make dev` brings everything up on a 16 GB laptop; register/login works; CI green |
 | **1 — Tests Hub MVP** | Taxonomy for first track, content schema + provenance/licence model, YAML/JSON/CSV importer with validation & review queue, seed content (licensed banks + own questions), test catalogue, player (timed/untimed, autosave, resume), practice & exam modes, results with per-skill breakdown, custom test builder, company prep pages (official links + community topics) | 300+ reviewed questions across domains; full test flow E2E-tested |
 | **2 — AI Coach v1** | `core/llm` abstraction + Ollama provider, model profiles, prompt registry, explain/hint/reveal/why-wrong flows (SSE), RAG over curated KB (pgvector hybrid search), similar-question generator + validator, eval harness | Runs offline on CPU; key-consistency eval ≥ 98% on eval set |
 | **3 — Job Radar v1** | Source registry + legal review fields, connectors: Greenhouse, Lever, Ashby, SmartRecruiters, Personio, France Travail, BA Jobsuche, Arbeitnow, Remotive/RemoteOK, HN; normalisation, geo, categories, dedup, search UI with filters, saved searches, in-app + Web Push alerts, watchlist, application tracker, link-outs | ≥ 5 connectors live with fixtures; alerts delivered < 10 min after ingestion |
@@ -15,9 +15,32 @@ and by technical dependency. Each phase ends with a demo-able increment, green C
 | **7 — Production hardening** | Helm chart + kind CI test, OpenTofu + Ansible single-server deployment, Caddy TLS, backups (pg_dump + restic), Prometheus/Grafana/Loki dashboards & alerts, load tests (Locust), ZAP baseline DAST, SonarQube Community scan, security review, GDPR export/delete, docs & runbooks | One-command deploy to a VPS; restore tested; no high/critical findings open |
 | **8+ — Extensions** | Additional career tracks, contributor community features, mobile PWA polish, optional OIDC/Keycloak, optional GPU serving with vLLM, extract Job Radar into its own service if needed | — |
 
+### Phase 0 — delivered vs. planned
+Delivered: monorepo; Docker Compose (Postgres 16 + pgvector, Valkey 8, one-shot migrations, API, Celery
+worker and beat with the five queues, web); FastAPI core (settings with production safety checks, problem+json
+errors, structured JSON logs with request ids, Prometheus `/metrics`, `/healthz` and `/readyz`); built-in auth
+(Argon2id, server-side Valkey sessions, CSRF, login rate limiting, session rotation and revocation, audit log);
+RBAC with four roles; admin CLI; Next.js shell (landing, register, login, dashboard, optimistic route guard,
+security headers); typed API client generated from OpenAPI with a CI drift check; CI (ruff, strict mypy, pytest
+on real services, vitest, ESLint, tsc, build, licence allow-lists, gitleaks, Trivy fs + image scans, Compose E2E
+in a real browser); Dependabot; pre-commit.
+
+Moved to later phases, on purpose:
+| Item | Now planned in | Why |
+|------|----------------|-----|
+| OpenTelemetry tracing | Phase 7 (with Tempo/Grafana) | Metrics and request-id logs cover Phase 0; tracing pays off once there are async flows |
+| UI translations EN/FR (next-intl) | Phase 1 | Few strings yet; added with the first real pages |
+| TOTP 2FA, personal access tokens, password reset by e-mail | Phase 1 (2FA, tokens) and Phase 7 (e-mail) | Not needed for a single-user instance; e-mail needs SMTP |
+| Caddy reverse proxy and TLS | Phase 7 | Local use goes through the Next.js proxy |
+
 Indicative effort for one developer working with Claude Code: Phase 0 ≈ 1 week, Phases 1–3 ≈ 2–3 weeks each, Phases 4–7 ≈ 2–4 weeks each.
 
-## Open decisions (need your approval)
+## Decisions taken (Nov 2026)
+D1 licence **MIT** · D2 **OpenTofu** · D3 **Valkey** · D4 EN + FR UI · D5 Qwen3 4B/8B by default · D6 local first,
+then a low-cost VPS · D7 own gVisor runner · D8 personal / invite-only first (`REGISTRATION_OPEN=false`) ·
+D9 Jobs (phase 3) before Challenges (phase 4). Any of these can be revisited.
+
+## Decision log (original proposals)
 
 | # | Question | Recommendation |
 |---|----------|----------------|

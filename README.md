@@ -2,8 +2,47 @@
 
 **AI-powered interview preparation & career intelligence platform — free, open-source and self-hostable.**
 
-> Status: **Design phase (Phase 0).** No application code yet. The documents below are the
-> proposed specification and are awaiting approval before implementation starts.
+> Status: **Phase 0 (foundations) is done**: monorepo, Docker Compose stack, FastAPI core, accounts and
+> sessions, roles, Next.js shell, CI. Feature modules start in Phase 1. See the [roadmap](docs/08-roadmap.md).
+
+## Quick start
+
+Requirements: Docker Engine with Compose v2 (Docker Desktop is not required: Podman, Colima or Rancher
+Desktop work too) and about 3 GB of free RAM.
+
+```bash
+git clone https://github.com/malekachouri/CareerPilot-AI.git && cd CareerPilot-AI
+cp .env.example .env
+docker compose up -d --build --wait
+```
+
+Open http://localhost:3000 and create an account. The API docs are at http://localhost:8000/api/v1/docs.
+
+For a personal, invite-only instance, set `REGISTRATION_OPEN=false` in `.env`, then create your account:
+
+```bash
+docker compose run --rm api careerpilot create-admin --email you@example.org
+```
+
+## Development
+
+| Task | Command |
+|------|---------|
+| Start Postgres + Valkey only | `make dev-deps` |
+| API with hot reload (port 8000) | `make api` (uses [uv](https://docs.astral.sh/uv/)) |
+| Web with hot reload (port 3000) | `make web` (uses pnpm) |
+| Tests / lint / types | `make test` · `make lint` · `make typecheck` |
+| Regenerate the typed API client after an API change | `make api-client` |
+| Browser smoke test against the running stack | `make e2e` |
+
+| Path | What |
+|------|------|
+| `apps/api` | FastAPI + SQLAlchemy 2 + Alembic + Celery (Python 3.12) |
+| `apps/web` | Next.js 16 + TypeScript + Tailwind CSS; `/api/*` is proxied to the API (same-origin cookies) |
+| `docs/` | Design documents (below) |
+| `.github/workflows/ci.yml` | Lint, strict types, tests on real Postgres/Valkey, licence gate, gitleaks, Trivy, image scan, Compose E2E |
+
+Private study content (captured recruitment tests) lives in a **separate private repository** and is never committed here.
 
 ## Modules
 
@@ -35,6 +74,8 @@ First career track: **DevOps / Cloud / AI Engineer**. The content model supports
 | [11 — Content & licensing policy](docs/11-content-licensing-policy.md) | Provenance labels, licence rules, takedown process |
 | [12 — Source review (Nov 2026)](docs/12-source-review.md) | Analysis of the owner's captured tests & suggested resources |
 | [Free & open-source stack](docs/FREE_AND_OPEN_SOURCE_STACK.md) | Every technology: licence, cost, resources, alternatives |
+
+Licence: [MIT](LICENSE). Security reports: see [SECURITY.md](SECURITY.md).
 
 ## Core principles
 
