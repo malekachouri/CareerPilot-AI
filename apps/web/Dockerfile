@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 
@@ -17,7 +17,7 @@ ARG API_INTERNAL_URL=http://api:8000
 ENV API_INTERNAL_URL=$API_INTERNAL_URL
 RUN pnpm build
 
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 # The server only needs `node`: drop the bundled package managers (and their CVEs) and apply OS fixes.
 RUN apk upgrade --no-cache \
  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
