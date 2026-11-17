@@ -276,3 +276,20 @@ async def test_review_queue_publish(client: httpx.AsyncClient, taxonomy: None) -
     await login_as(client, "reader@example.org")
     q = (await client.get(f"/api/v1/questions/{qid}")).json()
     assert q["status"] == "published" and q["verification"] == "reviewed"
+
+
+async def test_options_are_shuffled_per_attempt_but_stable(client: httpx.AsyncClient, content: None) -> None:
+    await login_as(client, "ada@example.org")
+    test = await _test_by_slug(client, "devops-cloud-mock-exam")  # 15 questions, all 4-option
+    attempt = (await client.post(f"/api/v1/tests/{test['id']}/attempts", headers=csrf(client))).json()
+    orders = [[o["id"] for o in q["question"]["options"]] for q in attempt["questions"]]
+    assert any(order != sorted(order) for order in orders)  # not the stored A, B, C, D order
+    again = (await client.get(f"/api/v1/attempts/{attempt['id']}")).json()
+    assert [[o["id"] for o in q["question"]["options"]] for q in again["questions"]] == orders
+    results = (await client.post(f"/api/v1/attempts/{attempt['id']}/submit", headers=csrf(client))).json()
+    assert [[o["id"] for o in i["question"]["options"]] for i in results["items"]] == orders
+
+    verbal = await _test_by_slug(client, "aptitude-practice")
+    a2 = (await client.post(f"/api/v1/tests/{verbal['id']}/attempts", headers=csrf(client))).json()
+    tfu = [q for q in a2["questions"] if q["question"]["type"] == "true_false_undetermined"]
+    assert tfu and all([o["id"] for o in q["question"]["options"]] == ["A", "B", "C"] for q in tfu)

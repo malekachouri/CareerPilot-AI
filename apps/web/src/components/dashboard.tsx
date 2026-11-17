@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -52,12 +53,18 @@ export function Dashboard() {
           Log out
         </button>
       </div>
-      <section className="rounded-lg border border-border bg-surface p-6">
-        <h2 className="font-semibold">Your preparation starts in phase 1</h2>
-        <p className="mt-2 text-sm text-muted">
-          The platform foundations are ready: account, secure session and API. The Interview Tests Hub comes
-          next, with your private test notes.
-        </p>
+      <section className="grid gap-4 sm:grid-cols-2">
+        {[
+          ["/tests", "Interview Tests Hub", "Curated tests, a custom test builder and your private test notes."],
+          ["/analytics", "My progress", "Accuracy by topic, response time, repeated mistakes and gaps."],
+          ["/companies", "Company preparation", "Your private collections and practice by company."],
+          ["/generate", "AI question generator", "Generate practice questions with the local model."],
+        ].map(([href, title, text]) => (
+          <Link key={href} href={href} className="rounded-lg border border-border bg-surface p-5 hover:border-accent">
+            <p className="font-semibold">{title}</p>
+            <p className="mt-1 text-sm text-muted">{text}</p>
+          </Link>
+        ))}
       </section>
     </div>
   );

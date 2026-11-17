@@ -159,8 +159,8 @@ class GitHubAdapter:
     def _api_headers(self) -> dict[str, str]:
         headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
         token = get_settings().github_token
-        if token:
-            headers["Authorization"] = f"Bearer {token.get_secret_value()}"
+        if token and token.get_secret_value().strip():  # an empty GITHUB_TOKEN= in .env means "none"
+            headers["Authorization"] = f"Bearer {token.get_secret_value().strip()}"
         return headers
 
     async def describe(self, source: Source) -> SourceDescription:

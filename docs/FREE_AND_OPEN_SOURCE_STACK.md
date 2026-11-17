@@ -62,6 +62,10 @@ obligation on our code. **GPL-3.0** CLIs (Ansible, hadolint, espeak-ng, phonemiz
 | lingua-py | Language detection | Apache-2.0 | 🟢 | ~100 MB with all models (load subset) | €0 | uv | fastText lid (MIT/CC BY-SA model) |
 | fsrs (py-fsrs) | Spaced repetition | MIT | 🟢 | — | €0 | uv | SM-2 (algorithm, free) |
 | pypdf | PDF text extraction (licensed imports) | BSD-3 | 🟢 | — | €0 | uv | pdfplumber (MIT) |
+| PyYAML | YAML question banks and seed files | MIT | 🟢 | — | €0 | uv | ruamel.yaml (MIT) |
+| httpx | GitHub / HTTPS source adapters, Ollama client | BSD-3 | 🟢 | — | €0 | uv | aiohttp (Apache-2.0) |
+| python-multipart | File uploads (question import) | Apache-2.0 | 🟢 | — | €0 | uv | — |
+| respx (dev) | HTTP mocking for adapter tests | BSD-3 | 🟢 | — | €0 | uv | vcrpy (MIT) |
 | redis (redis-py) | Valkey client (protocol-compatible) | MIT | 🟢 | — | €0 | uv | valkey-py (MIT) |
 | prometheus-client | `/metrics` endpoint | Apache-2.0 | 🟢 | — | €0 | uv | OpenTelemetry metrics |
 | email-validator | E-mail validation (Pydantic `EmailStr`) | Unlicense | 🟢 | — | €0 | uv | — |

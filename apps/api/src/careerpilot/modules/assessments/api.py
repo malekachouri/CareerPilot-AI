@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 import uuid
 from datetime import datetime
 from typing import Any
@@ -18,6 +19,19 @@ from careerpilot.modules.content.models import AUTO_GRADED_TYPES, QuestionType, 
 from careerpilot.modules.taxonomy.models import Company
 
 router = APIRouter(tags=["tests"])
+
+# Keep the natural order where it carries meaning (True / False / Cannot be determined).
+FIXED_ORDER_TYPES = {"true_false", "true_false_undetermined", "survey"}
+
+
+def shuffled_for_attempt(question: dict[str, Any], attempt_id: uuid.UUID, position: int) -> dict[str, Any]:
+    """Options in a per-attempt order: stable across reloads and in the results, different per attempt,
+    so the position of the right answer gives nothing away. Option ids (used for grading) are unchanged."""
+    if question["type"] in FIXED_ORDER_TYPES or len(question["options"]) < 3:
+        return question
+    options = list(question["options"])
+    random.Random(f"{attempt_id}:{position}").shuffle(options)  # noqa: S311 - not security sensitive
+    return {**question, "options": options}
 
 
 class TestOut(BaseModel):
@@ -189,8 +203,12 @@ async def _attempt_state(db: DbSession, attempt: Attempt) -> dict[str, Any]:
                 "text_answer": a.text_answer,
                 "flagged": a.flagged,
                 "answered": a.selected is not None or bool(a.text_answer),
-                "question": serialize_question(
-                    q, v, details[q.id], sources.get(q.source_id) if q.source_id else None
+                "question": shuffled_for_attempt(
+                    serialize_question(
+                        q, v, details[q.id], sources.get(q.source_id) if q.source_id else None
+                    ),
+                    attempt.id,
+                    a.position,
                 ),
                 "auto_graded": QuestionType(v.type) in AUTO_GRADED_TYPES and bool(v.answer_key),
             }
@@ -278,8 +296,12 @@ async def results(attempt_id: uuid.UUID, db: DbSession, user: CurrentUser) -> di
                 "points": a.points,
                 "graded_by": a.graded_by,
                 "time_spent_ms": a.time_spent_ms,
-                "question": serialize_question(
-                    q, v, details[q.id], sources.get(q.source_id) if q.source_id else None, with_key=True
+                "question": shuffled_for_attempt(
+                    serialize_question(
+                        q, v, details[q.id], sources.get(q.source_id) if q.source_id else None, with_key=True
+                    ),
+                    attempt.id,
+                    a.position,
                 ),
             }
         )
