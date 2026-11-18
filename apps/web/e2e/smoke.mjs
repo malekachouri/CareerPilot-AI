@@ -56,6 +56,15 @@ try {
 
   await page.goto(`${base}/analytics`);
   await page.getByText("Accuracy by topic").waitFor();
+
+  // Coach without a model (CI): a multiple-choice question is still presented and graded by its key.
+  await page.goto(`${base}/coach`);
+  await page.getByRole("button", { name: /^DevOps Interview Agent/ }).click();
+  await page.waitForURL(/\/coach\/[^/]+$/);
+  await page.getByText(/recommended \d+ min/).waitFor();
+  await page.locator("fieldset label").first().click();
+  await page.getByRole("button", { name: "Submit answer" }).click();
+  await page.getByText(/Correct answer:/).waitFor();
   console.log("e2e smoke: OK");
 } finally {
   await browser.close();

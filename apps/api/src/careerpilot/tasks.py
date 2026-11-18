@@ -55,7 +55,16 @@ async def generate_questions(request: dict[str, object], owner_id: str, job_id: 
         )
 
 
+async def coach_process(message_id: str) -> None:
+    import careerpilot.models  # noqa: F401
+    from careerpilot.modules.coach.workflow import run_job
+
+    async with task_session() as db:
+        await run_job(db, uuid.UUID(message_id))
+
+
 TASKS = {
+    "coach.process": coach_process,
     "content.import_source": import_source,
     "generator.generate": generate_questions,
 }

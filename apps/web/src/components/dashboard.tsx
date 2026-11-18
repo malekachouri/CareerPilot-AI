@@ -56,6 +56,7 @@ export function Dashboard() {
       <section className="grid gap-4 sm:grid-cols-2">
         {[
           ["/tests", "Interview Tests Hub", "Curated tests, a custom test builder and your private test notes."],
+          ["/coach", "AI Interview Coach", "Specialised coaches, explanations, interview simulations and reports."],
           ["/analytics", "My progress", "Accuracy by topic, response time, repeated mistakes and gaps."],
           ["/companies", "Company preparation", "Your private collections and practice by company."],
           ["/generate", "AI question generator", "Generate practice questions with the local model."],

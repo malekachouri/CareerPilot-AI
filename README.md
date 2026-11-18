@@ -2,11 +2,15 @@
 
 **AI-powered interview preparation & career intelligence platform — free, open-source and self-hostable.**
 
-> Status: **Phase 1 (Interview Tests Hub) is done**, on top of the Phase 0 foundations: source import engine
+> Status: **Phase 2 (AI Interview Coach) is done**: 7 specialised agents, a 5-step coaching workflow,
+> interview simulations with follow-ups and a report, an evaluation engine, RAG with checked citations, and
+> per-topic personalisation. Earlier: **Phase 1 (Interview Tests Hub)**, on top of the Phase 0 foundations: source import engine
 > with licence checks, question bank, timed tests, results with explanations, analytics, company collections and
 > a local-AI question generator. See the [roadmap](docs/08-roadmap.md).
 
 ## Quick start
+
+🇫🇷 Guide pas à pas en français : [docs/guides/installation-locale-fr.md](docs/guides/installation-locale-fr.md)
 
 Requirements: Docker Engine with Compose v2 (Docker Desktop is not required: Podman, Colima or Rancher
 Desktop work too) and about 3 GB of free RAM.
@@ -19,7 +23,8 @@ docker compose up -d --build --wait
 
 Open http://localhost:3000 and create an account. The API docs are at http://localhost:8000/api/v1/docs.
 The first start seeds the categories, 55 original questions and 9 curated tests. For the AI question generator,
-also run `docker compose --profile ai up -d` and `docker compose exec ollama ollama pull qwen3:4b`.
+also run `docker compose --profile ai up -d`, then `docker compose exec ollama ollama pull qwen3:4b` and
+`docker compose exec ollama ollama pull nomic-embed-text`. Without a model, multiple-choice coaching still works.
 To add test sources, see [docs/guides/adding-a-test-source.md](docs/guides/adding-a-test-source.md).
 
 For a personal, invite-only instance, set `REGISTRATION_OPEN=false` in `.env`, then create your account:

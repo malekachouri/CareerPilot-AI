@@ -108,3 +108,66 @@ def set_llm_override(provider: LLMProvider | None) -> None:
     """Tests (and future provider plug-ins) can swap the provider."""
     global _override
     _override = provider
+
+
+# --- Embeddings ------------------------------------------------------------------------------------------
+
+
+class Embedder(Protocol):
+    name: str
+    model: str
+    dim: int
+
+    async def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
+class OllamaEmbedder:
+    """Ollama `/api/embed`. Default model nomic-embed-text (Apache-2.0, 768 dimensions)."""
+
+    name = "ollama"
+
+    def __init__(self, base_url: str, model: str, dim: int, timeout: float = 120.0) -> None:
+        self.base_url, self.model, self.dim, self.timeout = base_url.rstrip("/"), model, dim, timeout
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                r = await client.post(
+                    f"{self.base_url}/api/embed", json={"model": self.model, "input": texts}
+                )
+        except httpx.HTTPError as exc:
+            raise LLMUnavailableError(f"Ollama is not reachable at {self.base_url}: {exc}") from exc
+        if r.status_code != 200:
+            raise LLMUnavailableError(f"Embedding model '{self.model}' unavailable ({r.status_code})")
+        vectors: list[list[float]] = r.json().get("embeddings", [])
+        if len(vectors) != len(texts) or any(len(v) != self.dim for v in vectors):
+            raise LLMUnavailableError(f"Embedding model '{self.model}' must return {self.dim}-d vectors")
+        return vectors
+
+
+class DisabledEmbedder:
+    name, model, dim = "none", "none", 0
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        raise LLMUnavailableError("Embeddings are disabled")
+
+
+_embedder_override: Embedder | None = None
+
+
+def get_embedder() -> Embedder:
+    if _embedder_override is not None:
+        return _embedder_override
+    s = get_settings()
+    if s.llm_provider == "ollama" and s.embedding_model:
+        from careerpilot.modules.kb.models import EMBEDDING_DIM
+
+        return OllamaEmbedder(s.ollama_url, s.embedding_model, EMBEDDING_DIM)
+    return DisabledEmbedder()
+
+
+def set_embedder_override(embedder: Embedder | None) -> None:
+    global _embedder_override
+    _embedder_override = embedder
