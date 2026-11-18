@@ -389,11 +389,17 @@ async def submit_attempt(db: AsyncSession, attempt: Attempt, *, auto: bool = Fal
     if attempt.status != "in_progress":
         return attempt
     score = max_score = 0.0
+    from careerpilot.modules.coach.ratings import update_ratings
+
     for answer, version, _ in await attempt_rows(db, attempt):
         grade(answer, version)
         if answer.is_correct is not None:
             max_score += answer.points
             score += answer.score or 0.0
+            # Personalisation: every graded test answer moves the user's topic ratings.
+            await update_ratings(
+                db, attempt.user_id, answer.question_id, version.difficulty, 1.0 if answer.is_correct else 0.0
+            )
     attempt.status, attempt.submitted_at, attempt.auto_submitted = "submitted", utcnow(), auto
     attempt.score, attempt.max_score = score, max_score
     await db.commit()

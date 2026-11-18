@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     llm_model: str = "qwen3:4b"
     llm_timeout_seconds: float = 300.0
+    # Embeddings for RAG (empty = full-text search only). Must produce 768-d vectors (see kb/models.py).
+    embedding_model: str = "nomic-embed-text"
 
     @model_validator(mode="after")
     def _check_production_safety(self) -> Settings:

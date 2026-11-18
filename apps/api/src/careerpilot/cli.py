@@ -64,6 +64,7 @@ async def _seed() -> int:
                 "sources": content["sources"],
                 "tests": content["tests"],
                 "questions": {k: q[k] for k in ("parsed", "created", "updated", "unchanged", "duplicates")},
+                "kb": content["kb"],
             }
         )
     )

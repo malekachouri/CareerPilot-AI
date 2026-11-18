@@ -74,10 +74,14 @@ async def _clean_state() -> AsyncIterator[None]:
     async def inline(name: str, kwargs: dict[str, object]) -> None:
         await TASKS[name](**kwargs)  # type: ignore[operator]
 
+    from careerpilot.core.llm import DisabledEmbedder, set_embedder_override
+
     set_dispatcher(inline)  # background jobs run in-process, deterministically
+    set_embedder_override(DisabledEmbedder())  # no network: full-text retrieval unless a test sets a fake
     yield
     set_dispatcher(None)
     set_llm_override(None)
+    set_embedder_override(None)
 
 
 @pytest.fixture

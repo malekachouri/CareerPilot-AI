@@ -11,6 +11,7 @@ Dispatcher = Callable[[str, dict[str, Any]], Awaitable[None]]
 TASK_QUEUES = {
     "content.import_source": "content",
     "generator.generate": "llm",
+    "coach.process": "llm",
 }
 
 

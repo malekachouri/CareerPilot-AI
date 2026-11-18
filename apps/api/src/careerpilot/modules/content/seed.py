@@ -101,7 +101,17 @@ async def seed_content(db: AsyncSession) -> dict[str, Any]:
     if report.errors:
         raise ValueError(f"original content has errors: {report.errors[:5]}")
     tests = await seed_tests(db, root, sources["careerpilot-original"])
-    return {"sources": len(sources), "questions": report.as_dict(), "tests": tests}
+    # Knowledge base for the coach (RAG): curated notes + explanations of published questions.
+    from careerpilot.modules.kb.service import index_question_explanations, seed_notes
+
+    kb_notes = await seed_notes(db, root)
+    kb_questions = await index_question_explanations(db)
+    return {
+        "sources": len(sources),
+        "questions": report.as_dict(),
+        "tests": tests,
+        "kb": {"notes": kb_notes, "questions": kb_questions},
+    }
 
 
 async def import_captures(db: AsyncSession, *, owner_id: uuid.UUID, path: str) -> dict[str, Any]:

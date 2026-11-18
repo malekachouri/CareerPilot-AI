@@ -13,6 +13,7 @@ dependencies = [
     "email-validator>=2.4.0",
     "fastapi>=0.163.1",
     "httpx>=0.28.1",
+    "pgvector>=0.5.1",
     "prometheus-client>=0.26.0",
     "pydantic-settings>=2.16.3",
     "pypdf>=7.1.0",
@@ -43,6 +44,10 @@ ignore = ["S101"]  # assert is fine in tests
 "tests/**" = ["S105", "S106"]
 # Full-width colons and en dashes are intentional: they appear in French and PDF-extracted text.
 "src/careerpilot/modules/content/parsers.py" = ["RUF001"]
+# Prompt text is prose: long lines are easier to review than broken-up sentences.
+"src/careerpilot/modules/coach/agents/*.py" = ["E501"]
+"src/careerpilot/modules/coach/evaluation.py" = ["E501"]
+"tests/fakes.py" = ["E501", "S105"]
 
 [tool.mypy]
 python_version = "3.12"

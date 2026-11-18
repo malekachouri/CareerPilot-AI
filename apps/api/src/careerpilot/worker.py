@@ -69,4 +69,13 @@ def generate_questions(request: dict[str, object], owner_id: str, job_id: str) -
     asyncio.run(tasks.generate_questions(request, owner_id, job_id))
 
 
+@celery_app.task(name="coach.process", time_limit=900, soft_time_limit=870)  # type: ignore[untyped-decorator]
+def coach_process(message_id: str) -> None:
+    import asyncio
+
+    from careerpilot import tasks
+
+    asyncio.run(tasks.coach_process(message_id))
+
+
 app = celery_app

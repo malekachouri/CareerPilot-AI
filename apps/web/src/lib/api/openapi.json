@@ -1,57 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AnswerIn": {
-        "properties": {
-          "flagged": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flagged"
-          },
-          "selected": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "maxItems": 12,
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected"
-          },
-          "text_answer": {
-            "anyOf": [
-              {
-                "maxLength": 20000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Answer"
-          },
-          "time_spent_ms": {
-            "default": 0,
-            "maximum": 3600000.0,
-            "minimum": 0.0,
-            "title": "Time Spent Ms",
-            "type": "integer"
-          }
-        },
-        "title": "AnswerIn",
-        "type": "object"
-      },
       "AnswerKeyIn": {
         "properties": {
           "answer": {
@@ -79,6 +28,21 @@
           "answer"
         ],
         "title": "AnswerKeyIn",
+        "type": "object"
+      },
+      "AskIn": {
+        "properties": {
+          "message": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "AskIn",
         "type": "object"
       },
       "AttemptSummary": {
@@ -140,6 +104,26 @@
           "percent"
         ],
         "title": "AttemptSummary",
+        "type": "object"
+      },
+      "Body_upload_material_api_v1_me_kb_upload_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_material_api_v1_me_kb_upload_post",
         "type": "object"
       },
       "Body_upload_my_questions_api_v1_me_imports_upload_post": {
@@ -622,6 +606,48 @@
           "text"
         ],
         "title": "OptionIn",
+        "type": "object"
+      },
+      "ProfileIn": {
+        "properties": {
+          "focus_categories": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Focus Categories",
+            "type": "array"
+          },
+          "interview_minutes": {
+            "maximum": 90.0,
+            "minimum": 10.0,
+            "title": "Interview Minutes",
+            "type": "integer"
+          },
+          "language": {
+            "default": "en",
+            "pattern": "^(en|fr)$",
+            "title": "Language",
+            "type": "string"
+          },
+          "seniority": {
+            "pattern": "^(junior|mid|senior)$",
+            "title": "Seniority",
+            "type": "string"
+          },
+          "target_role": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Target Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_role",
+          "seniority",
+          "interview_minutes"
+        ],
+        "title": "ProfileIn",
         "type": "object"
       },
       "Provenance": {
@@ -1205,6 +1231,81 @@
         "title": "SessionOut",
         "type": "object"
       },
+      "SessionSummary": {
+        "properties": {
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "learning_mode": {
+            "title": "Learning Mode",
+            "type": "boolean"
+          },
+          "overall_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Score"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "agent",
+          "persona",
+          "title",
+          "status",
+          "learning_mode",
+          "created_at",
+          "updated_at",
+          "overall_score"
+        ],
+        "title": "SessionSummary",
+        "type": "object"
+      },
       "SourceIn": {
         "properties": {
           "attribution": {
@@ -1476,6 +1577,74 @@
           "attribution"
         ],
         "title": "SourceRef",
+        "type": "object"
+      },
+      "StartInterview": {
+        "properties": {
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": 10.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "persona": {
+            "title": "Persona",
+            "type": "string"
+          }
+        },
+        "required": [
+          "persona"
+        ],
+        "title": "StartInterview",
+        "type": "object"
+      },
+      "StartPractice": {
+        "properties": {
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "learning_mode": {
+            "default": false,
+            "title": "Learning Mode",
+            "type": "boolean"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          }
+        },
+        "required": [
+          "agent"
+        ],
+        "title": "StartPractice",
         "type": "object"
       },
       "TestOut": {
@@ -1779,6 +1948,102 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "careerpilot__modules__assessments__api__AnswerIn": {
+        "properties": {
+          "flagged": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flagged"
+          },
+          "selected": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 12,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected"
+          },
+          "text_answer": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Answer"
+          },
+          "time_spent_ms": {
+            "default": 0,
+            "maximum": 3600000.0,
+            "minimum": 0.0,
+            "title": "Time Spent Ms",
+            "type": "integer"
+          }
+        },
+        "title": "AnswerIn",
+        "type": "object"
+      },
+      "careerpilot__modules__coach__api__AnswerIn": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "selected": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 12,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 12000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "title": "AnswerIn",
+        "type": "object"
       }
     }
   },
@@ -1788,6 +2053,32 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/kb/reindex": {
+      "post": {
+        "description": "Re-index notes and question explanations, then add missing embeddings (if a model is available).",
+        "operationId": "reindex_api_v1_admin_kb_reindex_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Reindex Api V1 Admin Kb Reindex Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reindex",
+        "tags": [
+          "knowledge-base"
+        ]
+      }
+    },
     "/api/v1/admin/review": {
       "get": {
         "operationId": "review_queue_api_v1_admin_review_get",
@@ -2174,7 +2465,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AnswerIn"
+                "$ref": "#/components/schemas/careerpilot__modules__assessments__api__AnswerIn"
               }
             }
           },
@@ -2477,6 +2768,620 @@
         ]
       }
     },
+    "/api/v1/coach/agents": {
+      "get": {
+        "operationId": "list_agents_api_v1_coach_agents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Agents Api V1 Coach Agents Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Agents",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/interviews": {
+      "post": {
+        "operationId": "start_interview_api_v1_coach_interviews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartInterview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Start Interview Api V1 Coach Interviews Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Interview",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions": {
+      "get": {
+        "operationId": "list_sessions_api_v1_coach_sessions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SessionSummary"
+                  },
+                  "title": "Response List Sessions Api V1 Coach Sessions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Sessions",
+        "tags": [
+          "coach"
+        ]
+      },
+      "post": {
+        "operationId": "start_practice_api_v1_coach_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPractice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Start Practice Api V1 Coach Sessions Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Practice",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}": {
+      "get": {
+        "operationId": "get_session_api_v1_coach_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Session Api V1 Coach Sessions  Session Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Session",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/answer": {
+      "post": {
+        "operationId": "answer_api_v1_coach_sessions__session_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/careerpilot__modules__coach__api__AnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Answer Api V1 Coach Sessions  Session Id  Answer Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/ask": {
+      "post": {
+        "operationId": "ask_api_v1_coach_sessions__session_id__ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ask Api V1 Coach Sessions  Session Id  Ask Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/end": {
+      "post": {
+        "operationId": "end_api_v1_coach_sessions__session_id__end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response End Api V1 Coach Sessions  Session Id  End Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "End",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/hint": {
+      "post": {
+        "operationId": "hint_api_v1_coach_sessions__session_id__hint_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Hint Api V1 Coach Sessions  Session Id  Hint Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hint",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/messages/{message_id}/retry": {
+      "post": {
+        "operationId": "retry_api_v1_coach_sessions__session_id__messages__message_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Retry Api V1 Coach Sessions  Session Id  Messages  Message Id  Retry Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/next": {
+      "post": {
+        "operationId": "next_question_api_v1_coach_sessions__session_id__next_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Next Question Api V1 Coach Sessions  Session Id  Next Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Next Question",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/reveal": {
+      "post": {
+        "operationId": "reveal_api_v1_coach_sessions__session_id__reveal_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Reveal Api V1 Coach Sessions  Session Id  Reveal Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reveal",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/sessions/{session_id}/similar": {
+      "post": {
+        "operationId": "similar_api_v1_coach_sessions__session_id__similar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Similar Api V1 Coach Sessions  Session Id  Similar Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Similar",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/api/v1/coach/status": {
+      "get": {
+        "operationId": "coach_status_api_v1_coach_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Coach Status Api V1 Coach Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Coach Status",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
     "/api/v1/companies": {
       "get": {
         "operationId": "companies_api_v1_companies_get",
@@ -2649,6 +3554,67 @@
         "summary": "Get Job",
         "tags": [
           "content"
+        ]
+      }
+    },
+    "/api/v1/kb/search": {
+      "get": {
+        "operationId": "kb_search_api_v1_kb_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "k",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "K",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Kb Search Api V1 Kb Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Kb Search",
+        "tags": [
+          "knowledge-base"
         ]
       }
     },
@@ -2828,6 +3794,176 @@
         ]
       }
     },
+    "/api/v1/me/kb": {
+      "get": {
+        "operationId": "my_materials_api_v1_me_kb_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response My Materials Api V1 Me Kb Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Materials",
+        "tags": [
+          "knowledge-base"
+        ]
+      }
+    },
+    "/api/v1/me/kb/upload": {
+      "post": {
+        "description": "Your own learning materials (Markdown, text or PDF): searchable by your coach only.",
+        "operationId": "upload_material_api_v1_me_kb_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_material_api_v1_me_kb_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Upload Material Api V1 Me Kb Upload Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Material",
+        "tags": [
+          "knowledge-base"
+        ]
+      }
+    },
+    "/api/v1/me/kb/{document_id}": {
+      "delete": {
+        "operationId": "delete_material_api_v1_me_kb__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Material",
+        "tags": [
+          "knowledge-base"
+        ]
+      }
+    },
+    "/api/v1/me/learning-profile": {
+      "get": {
+        "operationId": "get_learning_profile_api_v1_me_learning_profile_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Learning Profile Api V1 Me Learning Profile Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Learning Profile",
+        "tags": [
+          "coach"
+        ]
+      },
+      "put": {
+        "operationId": "put_learning_profile_api_v1_me_learning_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Put Learning Profile Api V1 Me Learning Profile Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Learning Profile",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
     "/api/v1/me/password": {
       "post": {
         "operationId": "change_password_api_v1_me_password_post",
@@ -2866,6 +4002,32 @@
         "summary": "Change Password",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/me/skills": {
+      "get": {
+        "operationId": "my_skills_api_v1_me_skills_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response My Skills Api V1 Me Skills Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Skills",
+        "tags": [
+          "coach"
         ]
       }
     },

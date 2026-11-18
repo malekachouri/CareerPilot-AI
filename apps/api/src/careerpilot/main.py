@@ -19,6 +19,9 @@ from careerpilot.core.valkey import close_valkey
 from careerpilot.modules.admin.api import router as admin_router
 from careerpilot.modules.assessments.api import router as tests_router
 from careerpilot.modules.auth.api import router as auth_router
+from careerpilot.modules.coach.api import kb_router
+from careerpilot.modules.coach.api import me as coach_me_router
+from careerpilot.modules.coach.api import router as coach_router
 from careerpilot.modules.content.api import admin as content_admin_router
 from careerpilot.modules.content.api import router as content_router
 from careerpilot.modules.generator.api import router as generator_router
@@ -67,6 +70,9 @@ def create_app() -> FastAPI:
     app.include_router(content_admin_router, prefix=API_PREFIX)
     app.include_router(tests_router, prefix=API_PREFIX)
     app.include_router(generator_router, prefix=API_PREFIX)
+    app.include_router(coach_router, prefix=API_PREFIX)
+    app.include_router(coach_me_router, prefix=API_PREFIX)
+    app.include_router(kb_router, prefix=API_PREFIX)
     app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
     return app
 
