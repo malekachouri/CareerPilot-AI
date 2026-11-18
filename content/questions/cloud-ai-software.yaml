@@ -1,0 +1,282 @@
+# CareerPilot original practice questions — Cloud, AI and Software Engineering. Licence: CC BY 4.0.
+questions:
+- id: cld-aws-001
+  categories:
+  - aws
+  difficulty: beginner
+  stem: Which S3 storage class suits data that is rarely accessed but must be readable within milliseconds when
+    needed?
+  options:
+  - S3 Standard-Infrequent Access
+  - S3 Glacier Deep Archive
+  - S3 Standard
+  - Amazon EBS
+  answer: A
+  explanation: Standard-IA has lower storage cost with millisecond retrieval (and a per-GB retrieval fee). Deep
+    Archive retrieval takes hours.
+  distractor_explanations:
+    B: Retrieval takes hours.
+    C: Works, but costs more for rarely accessed data.
+    D: EBS is block storage attached to instances, not object storage.
+- id: cld-aws-002
+  categories:
+  - aws
+  - networking
+  - cloud-security
+  difficulty: intermediate
+  stem: AWS security groups are stateful. What does that mean?
+  options:
+  - Return traffic for an allowed connection is automatically allowed
+  - Rules are evaluated in numbered order
+  - They apply to a whole subnet
+  - They can only contain deny rules
+  answer: A
+  explanation: If an inbound request is allowed, the response is allowed out regardless of outbound rules. Network
+    ACLs, by contrast, are stateless, ordered and apply at subnet level.
+- id: cld-aws-003
+  categories:
+  - aws
+  - networking
+  difficulty: intermediate
+  stem: Instances in a private subnet must download OS updates from the internet without being reachable from it.
+    What do you add?
+  options:
+  - A NAT gateway in a public subnet and a route 0.0.0.0/0 to it from the private subnet
+  - An internet gateway attached to the private subnet's route table
+  - Public IP addresses on the instances
+  - A VPC peering connection
+  answer: A
+  explanation: A NAT gateway allows outbound-initiated traffic only. An internet gateway route or public IPs would
+    make the instances reachable.
+- id: cld-arch-001
+  categories:
+  - cloud-architecture
+  - system-design
+  difficulty: intermediate
+  stem: Your RPO is 15 minutes and your RTO is 1 hour. What does the RPO describe?
+  options:
+  - The maximum acceptable data loss, measured in time
+  - The maximum time to restore the service
+  - How often you test backups
+  - The time a failover takes
+  answer: A
+  explanation: RPO = how much data (time window) you can afford to lose, so backups/replication must be at least
+    every 15 minutes. RTO = how fast the service must be back.
+- id: cld-azure-001
+  categories:
+  - azure
+  difficulty: beginner
+  stem: In Azure, what is a resource group?
+  options:
+  - A logical container that holds related resources sharing a lifecycle and permissions
+  - A physical data centre
+  - A virtual network
+  - A billing account
+  answer: A
+- id: cld-gcp-001
+  categories:
+  - gcp
+  - cloud-security
+  difficulty: intermediate
+  stem: On Google Cloud, a workload on GKE must call a GCP API without a downloaded key file. What should it use?
+  options:
+  - Workload Identity, mapping the Kubernetes service account to a Google service account
+  - A service account JSON key stored in a Kubernetes Secret
+  - The project owner's personal credentials
+  - An API key in an environment variable
+  answer: A
+  explanation: Workload Identity issues short-lived credentials automatically. Long-lived key files can leak and
+    must be rotated by hand.
+- id: ai-llm-001
+  categories:
+  - llms
+  difficulty: beginner
+  stem: What does the `temperature` parameter control in text generation?
+  options:
+  - How random the sampling of the next token is
+  - The maximum length of the answer
+  - How much context the model can read
+  - The speed of generation
+  answer: A
+  explanation: Low temperature makes the most likely tokens dominate (more deterministic); higher values flatten
+    the distribution (more varied, more errors).
+- id: ai-llm-002
+  categories:
+  - ai-agents
+  - devsecops
+  difficulty: advanced
+  stem: Why is a narrow tool such as `refund(order_id, amount <= 100)` safer for an agent than a generic `run_sql(query)`
+    tool?
+  options:
+  - It limits the damage if the model is wrong or manipulated, and makes calls easy to validate and audit
+  - It makes the model answer faster
+  - Generic tools are not supported by function calling
+  - Narrow tools do not need authentication
+  answer: A
+  explanation: 'Least privilege applies to agents: typed, bounded tools turn arbitrary actions into a small set
+    of checked operations.'
+- id: ai-rag-001
+  categories:
+  - rag
+  - vector-databases
+  difficulty: intermediate
+  stem: In a RAG system, answers miss facts that are present in the documents. Which change most directly improves
+    retrieval recall?
+  options:
+  - Hybrid search (keyword + vector) with a reranker on the top results
+  - Raising the model's temperature
+  - Using longer system prompts
+  - Removing document chunking
+  answer: A
+  explanation: Keyword search catches exact terms (error codes, names) that embeddings can miss; a reranker then
+    orders candidates by relevance.
+- id: ai-rag-002
+  categories:
+  - rag
+  difficulty: beginner
+  stem: What does "chunking" mean in a RAG pipeline?
+  options:
+  - Splitting documents into smaller passages before embedding and indexing them
+  - Compressing the model weights
+  - Batching user requests
+  - Caching LLM answers
+  answer: A
+- id: ai-ml-001
+  categories:
+  - machine-learning
+  difficulty: intermediate
+  stem: A fraud dataset has 0.5% positive cases. Which evaluation is most informative?
+  options:
+  - Precision and recall (or PR-AUC) on the positive class
+  - Overall accuracy
+  - Training loss
+  - The number of features
+  answer: A
+  explanation: A model that always predicts 'not fraud' reaches 99.5% accuracy and is useless. Precision/recall
+    measure performance on the rare class.
+- id: ai-ml-002
+  categories:
+  - machine-learning
+  - deep-learning
+  difficulty: beginner
+  stem: Training loss keeps decreasing while validation loss starts increasing. What is happening?
+  options:
+  - Overfitting
+  - Underfitting
+  - Data leakage is fixed
+  - The learning rate is too low
+  answer: A
+  explanation: The model memorises the training data and generalises worse; use early stopping, regularisation or
+    more data.
+- id: ai-py-001
+  categories:
+  - python
+  difficulty: beginner
+  stem: What does this print? `x = [1, 2]; y = x; y.append(3); print(x)`
+  options:
+  - '[1, 2, 3]'
+  - '[1, 2]'
+  - '[3]'
+  - An error
+  answer: A
+  explanation: '`y = x` copies the reference, not the list. Both names point to the same list object.'
+- id: ai-mlops-001
+  categories:
+  - mlops
+  difficulty: intermediate
+  stem: What is the main purpose of a model registry (e.g. in MLflow)?
+  options:
+  - Version models with their metadata and manage stages such as staging and production
+  - Train models faster
+  - Store raw training data
+  - Serve predictions with low latency
+  answer: A
+- id: swe-algo-001
+  categories:
+  - algorithms
+  difficulty: intermediate
+  stem: What is the time complexity of binary search on a sorted array of n elements?
+  options:
+  - O(log n)
+  - O(n)
+  - O(n log n)
+  - O(1)
+  answer: A
+- id: swe-ds-001
+  categories:
+  - data-structures
+  difficulty: beginner
+  stem: Which data structure gives O(1) average-time lookup by key?
+  options:
+  - Hash map
+  - Sorted array
+  - Linked list
+  - Binary heap
+  answer: A
+  explanation: Hashing maps the key straight to a bucket. A sorted array needs O(log n) binary search, and a linked
+    list O(n).
+- id: swe-db-001
+  categories:
+  - databases
+  difficulty: intermediate
+  stem: Which SQL query returns, for each customer, the number of orders, including customers with zero orders?
+  options:
+  - SELECT c.id, COUNT(o.id) FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id
+  - SELECT c.id, COUNT(*) FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id
+  - SELECT customer_id, COUNT(*) FROM orders GROUP BY customer_id
+  - SELECT c.id, COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id
+  answer: A
+  explanation: LEFT JOIN keeps customers without orders, and COUNT(o.id) counts only matched orders (NULLs are ignored).
+  distractor_explanations:
+    B: The inner JOIN drops customers with no orders.
+    C: Customers with no orders do not appear in the orders table.
+    D: COUNT(*) counts the NULL-extended row, so customers with zero orders show 1.
+- id: swe-api-001
+  categories:
+  - apis
+  difficulty: beginner
+  stem: Which HTTP method is idempotent and typically used to fully replace a resource?
+  options:
+  - PUT
+  - POST
+  - PATCH
+  - CONNECT
+  answer: A
+  explanation: Sending the same PUT twice leaves the resource in the same state. POST usually creates a new resource
+    each time.
+- id: swe-sd-001
+  categories:
+  - system-design
+  difficulty: intermediate
+  stem: Why put a message queue between a web API and a slow image-processing service?
+  options:
+  - To decouple them, absorb traffic bursts and let the API respond without waiting
+  - To make image processing itself faster
+  - To guarantee each image is processed in under one second
+  - To replace the database
+  answer: A
+  explanation: The API enqueues work and returns quickly; workers process at their own pace and can be scaled independently.
+- id: swe-qa-001
+  categories:
+  - software-testing
+  difficulty: beginner
+  stem: What is the purpose of a regression test?
+  options:
+  - Check that existing behaviour still works after a change
+  - Measure performance under load
+  - Test the user interface manually
+  - Check code style
+  answer: A
+- id: swe-qa-002
+  categories:
+  - software-testing
+  difficulty: intermediate
+  stem: In the test pyramid, which kind of test should be the most numerous?
+  options:
+  - Unit tests
+  - End-to-end UI tests
+  - Manual exploratory tests
+  - Load tests
+  answer: A
+  explanation: Unit tests are fast, cheap and precise. End-to-end tests are valuable but slow and brittle, so keep
+    fewer of them.

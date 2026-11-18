@@ -37,6 +37,25 @@ try {
   await page.fill("#field-password", password);
   await page.click("button[type=submit]");
   await page.waitForURL(/\/dashboard$/);
+
+  // Tests Hub: library → test → timed attempt → autosave → submit → results with explanations.
+  await page.goto(`${base}/tests`);
+  await page.getByText("Linux & networking fundamentals").click();
+  await page.getByRole("button", { name: "Start test" }).click();
+  await page.waitForURL(/\/attempts\/[^/]+$/);
+  await page.getByRole("timer").waitFor();
+  await page.locator("fieldset label").first().click();
+  await page.getByText("1/6 answered").waitFor();
+  await page.reload(); // resume: the saved answer comes back
+  await page.getByText("1/6 answered").waitFor();
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Submit" }).click();
+  await page.waitForURL(/\/results$/);
+  await page.getByText("Review & explanations").waitFor();
+  assert.ok((await page.getByText("Explanation").count()) > 0);
+
+  await page.goto(`${base}/analytics`);
+  await page.getByText("Accuracy by topic").waitFor();
   console.log("e2e smoke: OK");
 } finally {
   await browser.close();

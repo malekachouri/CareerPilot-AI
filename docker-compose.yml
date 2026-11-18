@@ -11,6 +11,13 @@ x-api-env: &api-env
   COOKIE_SECURE: ${COOKIE_SECURE:-false}
   REGISTRATION_OPEN: ${REGISTRATION_OPEN:-true}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  CONTENT_DIRS: '["/content"]'
+  OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+  LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+  GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+
+x-content: &content-mount
+  - ./content:/content:ro
 
 services:
   postgres:
@@ -47,8 +54,10 @@ services:
   migrate:
     build: ./apps/api
     image: careerpilot-api:local
-    command: ["alembic", "upgrade", "head"]
+    # Schema migrations, then the idempotent seed (taxonomy, sources, original questions, curated tests).
+    command: ["sh", "-c", "alembic upgrade head && careerpilot seed"]
     environment: *api-env
+    volumes: *content-mount
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,6 +69,7 @@ services:
       <<: *api-env
       # The API is only reachable from the web container and the host loopback; trust their forwarded headers.
       FORWARDED_ALLOW_IPS: "*"
+    volumes: *content-mount
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -74,6 +84,7 @@ services:
     command: ["celery", "-A", "careerpilot.worker", "worker", "--loglevel=INFO",
               "-Q", "default,ingest,content,llm,media", "--concurrency=2"]
     environment: *api-env
+    volumes: *content-mount
     healthcheck:
       test: ["CMD-SHELL", "celery -A careerpilot.worker inspect ping -d celery@$$HOSTNAME --timeout 5"]
       interval: 60s
@@ -111,6 +122,16 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Optional local LLM for the question generator: docker compose --profile ai up -d
+  # then pull a model once: docker compose exec ollama ollama pull qwen3:4b
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ai"]
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
 volumes:
+  ollama:
   pgdata:
   valkeydata:

@@ -12,8 +12,12 @@ dependencies = [
     "celery[redis]>=5.7.0",
     "email-validator>=2.4.0",
     "fastapi>=0.163.1",
+    "httpx>=0.28.1",
     "prometheus-client>=0.26.0",
     "pydantic-settings>=2.16.3",
+    "pypdf>=7.1.0",
+    "python-multipart>=0.0.34",
+    "pyyaml>=6.0.3",
     "redis>=8.1.0",
     "sqlalchemy[asyncio]>=2.1.9",
     "structlog>=26.1.0",
@@ -37,6 +41,8 @@ ignore = ["S101"]  # assert is fine in tests
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106"]
+# Full-width colons and en dashes are intentional: they appear in French and PDF-extracted text.
+"src/careerpilot/modules/content/parsers.py" = ["RUF001"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -62,5 +68,7 @@ dev = [
     "pip-licenses>=5.5.5",
     "pytest>=9.2.0",
     "pytest-asyncio>=1.5.0",
+    "respx>=0.23.1",
     "ruff>=0.17.5",
+    "types-pyyaml>=6.0.12.20261113",
 ]

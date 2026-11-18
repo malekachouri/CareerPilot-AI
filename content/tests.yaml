@@ -1,0 +1,50 @@
+# Curated tests built from CareerPilot original questions (by question id). `careerpilot seed` creates them.
+tests:
+  - slug: linux-networking-fundamentals
+    title: Linux & networking fundamentals
+    description: Processes, disks, permissions, DNS and subnetting.
+    time_limit_minutes: 8
+    questions: [dvo-linux-001, dvo-linux-002, dvo-linux-003, dvo-net-001, dvo-net-002, cld-aws-003]
+  - slug: containers-kubernetes
+    title: Docker & Kubernetes
+    description: Images, layers, volumes, probes, RBAC and troubleshooting.
+    time_limit_minutes: 10
+    questions: [dvo-docker-001, dvo-docker-002, dvo-docker-003, dvo-k8s-001, dvo-k8s-002, dvo-k8s-003, dvo-k8s-004]
+  - slug: cicd-iac-observability
+    title: CI/CD, IaC & observability
+    description: Delivery practices, GitHub Actions security, Terraform state, Ansible and PromQL.
+    time_limit_minutes: 12
+    questions: [dvo-cicd-001, dvo-cicd-002, dvo-gha-001, dvo-sec-001, dvo-tf-001, dvo-tf-002, dvo-ans-001, dvo-mon-001]
+  - slug: cloud-essentials
+    title: Cloud essentials (AWS, Azure, GCP)
+    description: Storage classes, networking, identity and resilience.
+    time_limit_minutes: 10
+    questions: [cld-aws-001, cld-aws-002, cld-aws-003, cld-arch-001, cld-azure-001, cld-gcp-001]
+  - slug: ai-engineering
+    title: AI engineering, RAG & MLOps
+    description: LLM parameters, agent safety, retrieval, evaluation and model lifecycle.
+    time_limit_minutes: 12
+    questions: [ai-llm-001, ai-llm-002, ai-rag-001, ai-rag-002, ai-ml-001, ai-ml-002, ai-py-001, ai-mlops-001]
+  - slug: software-engineering-fundamentals
+    title: Software engineering fundamentals
+    description: Algorithms, data structures, SQL, APIs, system design and testing.
+    questions: [swe-algo-001, swe-ds-001, swe-db-001, swe-api-001, swe-sd-001, swe-qa-001, swe-qa-002]
+  - slug: aptitude-practice
+    title: Aptitude practice (numerical, logical, verbal, abstract)
+    description: Practice items in common assessment formats. Not taken from any publisher's test.
+    time_limit_minutes: 12
+    questions: [rec-num-001, rec-num-002, rec-num-003, rec-num-004, rec-log-001, rec-log-002, rec-log-003,
+                rec-verb-001, rec-verb-002, rec-verb-003, rec-abs-001, rec-att-001]
+  - slug: situational-judgment-practice
+    title: Situational judgment practice
+    description: Workplace scenarios. Scored against the generally recommended answer.
+    mode: practice
+    questions: [rec-sjt-001, rec-sjt-002]
+  - slug: devops-cloud-mock-exam
+    title: DevOps & Cloud mock exam
+    description: A mixed, timed exam across the DevOps and Cloud questions.
+    time_limit_minutes: 25
+    shuffle: true
+    questions: [dvo-linux-002, dvo-net-002, dvo-docker-002, dvo-k8s-001, dvo-k8s-003, dvo-cicd-002, dvo-gha-001,
+                dvo-tf-002, dvo-mon-001, dvo-sec-001, cld-aws-002, cld-aws-003, cld-arch-001, cld-gcp-001,
+                swe-sd-001]

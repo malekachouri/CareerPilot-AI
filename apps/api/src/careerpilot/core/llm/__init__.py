@@ -1,0 +1,110 @@
+"""LLM provider abstraction (docs/06 §2). Local by default: no paid API is required or used."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import Any, Protocol
+
+import httpx
+
+from careerpilot.core.config import get_settings
+
+
+class LLMUnavailableError(Exception):
+    """No model is reachable (Ollama not running, model not pulled, provider disabled)."""
+
+
+@dataclass(frozen=True)
+class Message:
+    role: str  # system | user | assistant
+    content: str
+
+
+class LLMProvider(Protocol):
+    name: str
+    model: str
+
+    async def structured(
+        self, messages: list[Message], schema: dict[str, Any], *, temperature: float = 0.4
+    ) -> dict[str, Any]: ...
+
+    async def health(self) -> bool: ...
+
+
+class OllamaProvider:
+    """Ollama native API with JSON-schema structured outputs (`format` = schema)."""
+
+    name = "ollama"
+
+    def __init__(self, base_url: str, model: str, timeout: float) -> None:
+        self.base_url, self.model, self.timeout = base_url.rstrip("/"), model, timeout
+
+    async def structured(
+        self, messages: list[Message], schema: dict[str, Any], *, temperature: float = 0.4
+    ) -> dict[str, Any]:
+        payload = {
+            "model": self.model,
+            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "format": schema,
+            "stream": False,
+            "think": False,
+            "options": {"temperature": temperature},
+        }
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                r = await client.post(f"{self.base_url}/api/chat", json=payload)
+        except httpx.HTTPError as exc:
+            raise LLMUnavailableError(f"Ollama is not reachable at {self.base_url}: {exc}") from exc
+        if r.status_code == 404:
+            raise LLMUnavailableError(f"Model '{self.model}' is not available. Run: ollama pull {self.model}")
+        if r.status_code != 200:
+            raise LLMUnavailableError(f"Ollama returned {r.status_code}: {r.text[:200]}")
+        content = r.json().get("message", {}).get("content", "")
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise ValueError("model output is not valid JSON") from exc
+        if not isinstance(data, dict):
+            raise ValueError("model output is not a JSON object")
+        return data
+
+    async def health(self) -> bool:
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                r = await client.get(f"{self.base_url}/api/tags")
+            names = {m.get("name") for m in r.json().get("models", [])} if r.status_code == 200 else set()
+            return self.model in names or f"{self.model}:latest" in names
+        except (httpx.HTTPError, ValueError):
+            return False
+
+
+class DisabledProvider:
+    name = "none"
+    model = "none"
+
+    async def structured(
+        self, messages: list[Message], schema: dict[str, Any], *, temperature: float = 0.4
+    ) -> dict[str, Any]:
+        raise LLMUnavailableError("The AI provider is disabled (LLM_PROVIDER=none).")
+
+    async def health(self) -> bool:
+        return False
+
+
+_override: LLMProvider | None = None
+
+
+def get_llm() -> LLMProvider:
+    if _override is not None:
+        return _override
+    s = get_settings()
+    if s.llm_provider == "ollama":
+        return OllamaProvider(s.ollama_url, s.llm_model, s.llm_timeout_seconds)
+    return DisabledProvider()
+
+
+def set_llm_override(provider: LLMProvider | None) -> None:
+    """Tests (and future provider plug-ins) can swap the provider."""
+    global _override
+    _override = provider

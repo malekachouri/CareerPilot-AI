@@ -13,17 +13,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
         <header className="border-b border-border bg-surface">
-          <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+          <nav className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
             <Link href="/" className="font-semibold tracking-tight">
               CareerPilot <span className="text-accent">AI</span>
             </Link>
-            <div className="flex gap-4 text-sm">
-              <Link href="/dashboard" className="text-muted hover:text-foreground">
-                Dashboard
-              </Link>
-              <Link href="/login" className="text-muted hover:text-foreground">
-                Log in
-              </Link>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {[
+                ["/tests", "Tests"],
+                ["/companies", "Companies"],
+                ["/generate", "Generate"],
+                ["/analytics", "Analytics"],
+                ["/dashboard", "Dashboard"],
+              ].map(([href, label]) => (
+                <Link key={href} href={href} className="text-muted hover:text-foreground">
+                  {label}
+                </Link>
+              ))}
             </div>
           </nav>
         </header>

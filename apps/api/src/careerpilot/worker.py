@@ -49,4 +49,24 @@ def heartbeat() -> float:
     return now
 
 
+@celery_app.task(name="content.import_source")  # type: ignore[untyped-decorator]
+def import_source(
+    source_id: str, job_id: str, owner_id: str | None = None, publish: bool | None = None
+) -> None:
+    import asyncio
+
+    from careerpilot import tasks
+
+    asyncio.run(tasks.import_source(source_id, job_id, owner_id, publish))
+
+
+@celery_app.task(name="generator.generate", time_limit=1800, soft_time_limit=1750)  # type: ignore[untyped-decorator]
+def generate_questions(request: dict[str, object], owner_id: str, job_id: str) -> None:
+    import asyncio
+
+    from careerpilot import tasks
+
+    asyncio.run(tasks.generate_questions(request, owner_id, job_id))
+
+
 app = celery_app

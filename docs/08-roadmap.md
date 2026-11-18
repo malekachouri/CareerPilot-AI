@@ -6,7 +6,7 @@ and by technical dependency. Each phase ends with a demo-able increment, green C
 | Phase | Scope | Exit criteria |
 |-------|-------|---------------|
 | **0 — Foundations** ✅ done | Monorepo skeleton, Docker Compose (Postgres+pgvector, Valkey, API, worker, web), FastAPI core (config, DB, errors, logging, OTel), Alembic, Next.js shell with auth pages, built-in auth + RBAC, CI (lint, type-check, unit tests, Trivy, gitleaks, licence check), `.env.example`, `FREE_AND_OPEN_SOURCE_STACK.md` kept current | `make dev` brings everything up on a 16 GB laptop; register/login works; CI green |
-| **1 — Tests Hub MVP** | Taxonomy for first track, content schema + provenance/licence model, YAML/JSON/CSV importer with validation & review queue, seed content (licensed banks + own questions), test catalogue, player (timed/untimed, autosave, resume), practice & exam modes, results with per-skill breakdown, custom test builder, company prep pages (official links + community topics) | 300+ reviewed questions across domains; full test flow E2E-tested |
+| **1 — Tests Hub MVP** ✅ done | Taxonomy for first track, content schema + provenance/licence model, YAML/JSON/CSV importer with validation & review queue, seed content (licensed banks + own questions), test catalogue, player (timed/untimed, autosave, resume), practice & exam modes, results with per-skill breakdown, custom test builder, company prep pages (official links + community topics) | 300+ reviewed questions across domains; full test flow E2E-tested |
 | **2 — AI Coach v1** | `core/llm` abstraction + Ollama provider, model profiles, prompt registry, explain/hint/reveal/why-wrong flows (SSE), RAG over curated KB (pgvector hybrid search), similar-question generator + validator, eval harness | Runs offline on CPU; key-consistency eval ≥ 98% on eval set |
 | **3 — Job Radar v1** | Source registry + legal review fields, connectors: Greenhouse, Lever, Ashby, SmartRecruiters, Personio, France Travail, BA Jobsuche, Arbeitnow, Remotive/RemoteOK, HN; normalisation, geo, categories, dedup, search UI with filters, saved searches, in-app + Web Push alerts, watchlist, application tracker, link-outs | ≥ 5 connectors live with fixtures; alerts delivered < 10 min after ingestion |
 | **4 — Challenges & sandbox** | Sandbox service (gVisor runner; Piston for local dev), Monaco editor, Python/JS/SQL/Bash challenges, debug challenges, validator image (Dockerfile, K8s manifests, IaC, GitHub Actions), simulated K8s troubleshooting scenarios, logic games, XP/badges/leaderboards | Sandbox escape test suite passes; 50+ challenges |
@@ -14,6 +14,31 @@ and by technical dependency. Each phase ends with a demo-able increment, green C
 | **6 — English Academy** | Sections & CEFR placement, reading/listening content pipeline (public-domain/CC sources + TTS), writing tutor (LanguageTool + LLM), speaking (faster-whisper, fluency & pronunciation), vocab SRS (NGSL + technical glossary), interview English persona, voice mock interview | All 9 sections usable; STT works offline |
 | **7 — Production hardening** | Helm chart + kind CI test, OpenTofu + Ansible single-server deployment, Caddy TLS, backups (pg_dump + restic), Prometheus/Grafana/Loki dashboards & alerts, load tests (Locust), ZAP baseline DAST, SonarQube Community scan, security review, GDPR export/delete, docs & runbooks | One-command deploy to a VPS; restore tested; no high/critical findings open |
 | **8+ — Extensions** | Additional career tracks, contributor community features, mobile PWA polish, optional OIDC/Keycloak, optional GPU serving with vLLM, extract Job Radar into its own service if needed | — |
+
+### Phase 1 — delivered (Tests Hub, Prompt 2)
+- **Source integration engine**: adapters for GitHub repositories (metadata, README and question-bank
+  detection, licence from GitHub, commit pinning), HTTPS files, local folders and link-only websites. Parsers for
+  JSON, YAML, CSV, Markdown task lists, plain text and PDF. Licence gate: copy, link only, or human review.
+  Dedup by content hash and trigram similarity, versioned re-imports, attribution to file and line.
+  Background jobs with reports. Guide: [adding a test source](guides/adding-a-test-source.md).
+- **Categories**: all five groups of Prompt 2 (DevOps, Cloud, AI, Software Engineering, Recruitment
+  Assessments), plus QA, Git and web basics found in real tests, with aliases for imported banks.
+- **Formats**: multiple choice, multiple select, true/false, true/false/cannot tell, scenario, situational
+  judgment, open-ended, coding/debugging (graded by the user until the Phase 4 sandbox), questionnaires (never
+  scored). Interactive simulations are modelled; their player comes with Phase 4.
+- **Company preparation**: 13 companies; collections are your private captures or practice questions labelled
+  *"inspired by publicly documented recruitment topics"*. Official links are added only after review.
+- **AI generator**: position, technology, level, count, duration and type. Local model (Ollama), schema
+  validation, blind self-check, dedup. Output is stored private and unverified, apart from verified content.
+- **UX**: library with search and filters, test details, server-timed countdown with auto-submit, question
+  navigation, flags, keyboard, autosave and resume, results with explanations and why-wrong per option,
+  self-grading, setting keys on your own captures, file import.
+- **Analytics**: correct/incorrect, average response time, accuracy by topic and level, history, repeated
+  mistakes, knowledge gaps.
+- **Content**: 55 original questions in 9 curated tests (CC BY 4.0), checked against the private captures so
+  none reuses their content. Your 216 captured questions are imported privately into 4 collections.
+- **Not yet**: the planned exit criterion "300+ reviewed public questions" is not met (55 original). Next: import
+  approved open banks and write more. UI translations (FR) moved to Phase 2, together with the coach UI.
 
 ### Phase 0 — delivered vs. planned
 Delivered: monorepo; Docker Compose (Postgres 16 + pgvector, Valkey 9, one-shot migrations, API, Celery

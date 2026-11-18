@@ -2,8 +2,9 @@
 
 **AI-powered interview preparation & career intelligence platform — free, open-source and self-hostable.**
 
-> Status: **Phase 0 (foundations) is done**: monorepo, Docker Compose stack, FastAPI core, accounts and
-> sessions, roles, Next.js shell, CI. Feature modules start in Phase 1. See the [roadmap](docs/08-roadmap.md).
+> Status: **Phase 1 (Interview Tests Hub) is done**, on top of the Phase 0 foundations: source import engine
+> with licence checks, question bank, timed tests, results with explanations, analytics, company collections and
+> a local-AI question generator. See the [roadmap](docs/08-roadmap.md).
 
 ## Quick start
 
@@ -17,6 +18,9 @@ docker compose up -d --build --wait
 ```
 
 Open http://localhost:3000 and create an account. The API docs are at http://localhost:8000/api/v1/docs.
+The first start seeds the categories, 55 original questions and 9 curated tests. For the AI question generator,
+also run `docker compose --profile ai up -d` and `docker compose exec ollama ollama pull qwen3:4b`.
+To add test sources, see [docs/guides/adding-a-test-source.md](docs/guides/adding-a-test-source.md).
 
 For a personal, invite-only instance, set `REGISTRATION_OPEN=false` in `.env`, then create your account:
 

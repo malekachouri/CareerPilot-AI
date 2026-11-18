@@ -6,7 +6,7 @@ from alembic import context
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-import careerpilot.modules.users.models  # noqa: F401  (register tables)
+import careerpilot.models  # noqa: F401  (register all tables)
 from careerpilot.core.config import get_settings
 from careerpilot.core.db import Base
 
