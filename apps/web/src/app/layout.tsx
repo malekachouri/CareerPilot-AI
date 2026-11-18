@@ -20,6 +20,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
               {[
                 ["/tests", "Tests"],
+                ["/coach", "Coach"],
                 ["/companies", "Companies"],
                 ["/generate", "Generate"],
                 ["/analytics", "Analytics"],

@@ -430,8 +430,9 @@ async def recommendation(
         if not stem and cur.get("version_id"):
             v = await db.get(QuestionVersion, uuid.UUID(cur["version_id"]))
             stem = v.stem if v else ""
-        passages = await kb.search(db, f"{name} {stem}", user_id=session.user_id, k=3, categories=[topic])
-        notes = [p for p in passages if p.kind in ("note", "doc", "upload")] or passages
+        passages = await kb.search(db, f"{name} {stem}", user_id=session.user_id, k=6, categories=[topic])
+        # A lesson is study material (notes, documentation, your uploads), never the question itself.
+        notes = [p for p in passages if p.kind in ("note", "doc", "upload")]
         if notes:
             lesson = notes[0].reference()
     rating = next((s.rating for s in skills if s.slug == topic), 1000.0)
@@ -517,7 +518,9 @@ async def _interview_answer(db: AsyncSession, session: CoachSession, text: str) 
         raise ProblemError(422, "Write an answer first")
     if not session.state.get("interview", {}).get("current_question"):
         raise ProblemError(409, "Wait for the interviewer's question")
-    await add_message(db, session, role="user", kind="answer", content=text[:12000])
+    await add_message(
+        db, session, role="user", kind="answer", content=text[:12000], data={"text": text[:12000]}
+    )
     msg = await add_message(
         db, session, role="coach", kind="question", job={"type": "interview_turn", "answer": text[:12000]}
     )
@@ -606,7 +609,8 @@ async def _job_enrich(
 ) -> None:
     v = await db.get(QuestionVersion, uuid.UUID(job["version_id"]))
     assert v is not None
-    passages = await kb.search(db, v.stem, user_id=session.user_id, k=4)
+    # Never cite the question's own explanation as evidence for itself.
+    passages = await kb.search(db, v.stem, user_id=session.user_id, k=4, exclude_question_id=v.question_id)
     data = await ev.enrich_closed(llm, agent_of(session), v, passages)
     if data is None:
         msg.content = (

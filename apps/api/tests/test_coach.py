@@ -113,10 +113,13 @@ async def test_practice_flow_closed_question(client: httpx.AsyncClient, content:
         and insight["data"]["common_mistakes"]
     )
     assert all(r["n"] == 1 for r in insight["data"]["references"])  # [42] did not exist and was dropped
+    stem = q["data"]["question"]["stem"]
+    assert all(stem[:60] not in r["title"] for r in insight["data"]["references"])  # never cites itself
     # STEP 5: recommendation with a lesson from the knowledge base.
     rec = last(s, "recommendation")
     assert rec["data"]["topic"] and rec["data"]["next_difficulty"] in (1, 2, 3, 4)
-    assert rec["data"]["lesson"] and rec["data"]["lesson"]["title"]
+    if rec["data"]["lesson"]:  # a lesson is study material, never a question
+        assert rec["data"]["lesson"]["kind"] in ("note", "doc", "upload")
     skills = (await client.get("/api/v1/me/skills")).json()
     assert any(sk["answered"] == 1 and sk["rating"] < 1000 for sk in skills)
 
@@ -236,6 +239,7 @@ async def test_interview_one_question_at_a_time_follow_up_and_report(
         if s["status"] == "active":
             assert "score" not in json.dumps([m["data"] for m in s["messages"] if m["kind"] == "question"])
         assert answers < 10
+    assert all(m["data"]["text"] for m in s["messages"] if m["kind"] == "answer")
     follow_ups = [m for m in s["messages"] if m["kind"] == "question" and m["data"].get("follow_up")]
     assert len(follow_ups) == 1 and answers == 4  # 3 main questions + 1 adaptive follow-up
     report = s["report"]

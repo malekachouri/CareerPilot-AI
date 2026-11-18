@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
  * Optimistic redirect only: checks the session cookie exists. The API remains the authority and
  * every protected call is verified server-side (an expired cookie still gets a 401 there).
  */
-const PROTECTED = ["/dashboard", "/tests", "/attempts", "/analytics", "/companies", "/generate"];
+const PROTECTED = ["/dashboard", "/coach", "/tests", "/attempts", "/analytics", "/companies", "/generate"];
 
 export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has("cp_session");
@@ -26,6 +26,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/tests/:path*",
+    "/coach/:path*",
     "/attempts/:path*",
     "/analytics/:path*",
     "/companies/:path*",

@@ -1,5 +1,16 @@
 # 06 — AI Agents Design
 
+> **As built (Phase 2, Prompt 3).** Code: `apps/api/src/careerpilot/modules/coach/` and `modules/kb/`.
+>
+> | Topic | Built | Difference from the original design below |
+> |-------|-------|------------------------------------------|
+> | Agents | 7 agents, one module each in `coach/agents/` (persona, topics, extra rubric criteria, open-problem brief, evaluation focus). A registry in `agents/__init__.py`; 6 interview personas. | Specialised agents replace "one coach + personas" |
+> | Orchestration | A deterministic state machine in `coach/workflow.py`. Every model call is a background job (Celery `llm` queue) attached to a `pending` message, queued **after commit**, and the UI polls. | **No LangGraph.** The flows are short, linear and need no tool loop, so ~600 lines of explicit code are easier to test and audit than a graph framework (one less dependency). Revisit if agents gain tools. Responses are polled rather than streamed over SSE, because a local CPU model can exceed the web proxy timeout. |
+> | Evaluation | `coach/evaluation.py`: keys grade closed questions; explanations that contradict the key are discarded; open answers get 0–5 per criterion (6 core + agent extras) and the overall score is computed in code; code is reasoned about, not executed; explanations are cached per question version. | — |
+> | RAG | `kb_documents` / `kb_chunks` (Postgres full-text + pgvector HNSW, reciprocal rank fusion). Sources: curated notes in `content/kb/*.md` (CC BY 4.0), published question explanations, private user uploads. Citations must point to a retrieved passage, and a question never cites itself. | Embeddings via Ollama `nomic-embed-text` (768-d, Apache-2.0) instead of in-process sentence-transformers (no 2 GB torch dependency). Without embeddings, retrieval falls back to full text. No reranker yet. |
+> | Personalisation | `coach/ratings.py`: Elo per topic, fed by Tests Hub submissions and coach answers (hints halve the weight; open answers count 0.5). Weakest topic first, target difficulty ≈ 65% expected success, recently seen questions excluded. `learner_profiles` holds role, seniority and interview length. | Elo instead of IRT (simpler, enough at this scale) |
+> | Not yet | Automated evaluation datasets (§6) against a real model, multilingual (FR) prompts, streaming, voice. | Planned |
+
 ## 1. Principles
 
 1. **Local first** — default provider is Ollama; no paid API required. Any other provider must be explicitly enabled by the operator.

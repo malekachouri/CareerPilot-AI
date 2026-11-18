@@ -34,6 +34,7 @@ obligation on our code. **GPL-3.0** CLIs (Ansible, hadolint, espeak-ng, phonemiz
 | playwright (Node) | E2E smoke test in CI | Apache-2.0 | 🟢 | Chromium ~150 MB (CI only) | €0 | `pnpm exec playwright install chromium` | — |
 | next-intl | i18n EN/FR | MIT | 🟢 | — | €0 | npm | react-i18next (MIT) |
 | Monaco Editor | Code editor | MIT | 🟢 | ~5 MB bundle (lazy-loaded) | €0 | `@monaco-editor/react` | CodeMirror 6 (MIT, lighter) |
+| CodeMirror 6 (`@uiw/react-codemirror`, `@codemirror/lang-*`) | Code editor in the coach (chosen: lighter than Monaco) | MIT | 🟢 | ~150 KB lazy-loaded | €0 | pnpm | Monaco (MIT) |
 | Recharts | Charts | MIT | 🟢 | — | €0 | npm | Apache ECharts (Apache-2.0) |
 | wavesurfer.js | Audio waveform / recording UI | BSD-3 | 🟢 | — | €0 | npm | native MediaRecorder |
 | Zustand | Local state | MIT | 🟢 | — | €0 | npm | Jotai (MIT) |
@@ -88,7 +89,8 @@ Redis note: Redis 7.4+ moved to RSALv2/SSPLv1 (not OSI); Redis 8 added AGPLv3 as
 |------|---------|---------|--------|-----------|------|---------|--------------|
 | **Ollama** | Local LLM runtime (OpenAI-compatible + native API, structured outputs) | MIT | 🔵 (Ollama cloud models exist — **disabled/not used**) | see model table; CPU OK, GPU optional | €0 | Compose service `ollama/ollama`; `ollama pull qwen3:4b` | llama.cpp `llama-server` (MIT), LocalAI (MIT) |
 | vLLM | High-throughput GPU serving (optional, later) | Apache-2.0 | 🟢 | NVIDIA GPU ≥ 16 GB VRAM for 7–8B | €0 software; GPU hardware/rental is a cost | Docker `vllm/vllm-openai` | SGLang (Apache-2.0), TGI (Apache-2.0) |
-| LangGraph | Agent graphs, Postgres checkpointer | MIT | 🔵 (LangGraph Platform/LangSmith paid — **not used**) | — | €0 | uv | Plain state machines; LlamaIndex workflows (MIT) |
+| LangGraph | *Not used (Phase 2 decision, docs/06): explicit state machine instead* | MIT | 🔵 | — | €0 | — | Plain state machines (chosen); LlamaIndex workflows (MIT) |
+| pgvector (Python) | SQLAlchemy `Vector` type for the knowledge base | MIT | 🟢 | — | €0 | uv | — |
 | langchain-text-splitters | Chunking | MIT | 🟢 | — | €0 | uv | own splitter |
 | sentence-transformers | Embeddings & rerankers in-process | Apache-2.0 | 🟢 | +~500 MB RAM (torch CPU) | €0 | uv (CPU torch wheel) | fastembed (Apache-2.0, ONNX, lighter), Ollama embed |
 | Hugging Face Hub (downloads) | Model download | Apache-2.0 (client) | 🟡 free downloads, rate-limited | disk | €0 | `huggingface-cli download` | Ollama registry |
@@ -103,7 +105,8 @@ Redis note: Redis 7.4+ moved to RSALv2/SSPLv1 (not OSI); Redis 8 added AGPLv3 as
 | Phi-4-mini | Alternative small | MIT | ✅ | ~3 GB | |
 | Llama 3.x | Alternative | Llama Community Licence (not OSI) | ✅ with conditions (attribution, AUP, >700M MAU clause) | ~5 GB (8B) | Only if owner accepts licence |
 | Gemma 3 | Alternative | Gemma Terms of Use (not OSI) | ✅ with use restrictions | varies | Only if owner accepts |
-| intfloat/multilingual-e5-small | Embeddings (384-d, multilingual) | MIT | ✅ | ~0.5 GB | **Default** |
+| nomic-embed-text (via Ollama) | Embeddings (768-d) for the coach knowledge base | Apache-2.0 | ✅ | ~0.3 GB | **Default** (`EMBEDDING_MODEL`) |
+| intfloat/multilingual-e5-small | Embeddings (384-d, multilingual) | MIT | ✅ | ~0.5 GB | Alternative (needs the 768-d column changed) |
 | BAAI/bge-m3 | Better multilingual embeddings (1024-d) | MIT | ✅ | ~2.3 GB | Upgrade option |
 | BAAI/bge-reranker-base | Reranking | MIT | ✅ | ~1 GB | Optional |
 
