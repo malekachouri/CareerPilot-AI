@@ -55,6 +55,7 @@ services:
   migrate:
     build: ./apps/api
     image: careerpilot-api:local
+    pull_policy: build
     # Schema migrations, then the idempotent seed (taxonomy, sources, original questions, curated tests).
     command: ["sh", "-c", "alembic upgrade head && careerpilot seed"]
     environment: *api-env
@@ -66,6 +67,7 @@ services:
 
   api:
     image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
     environment:
       <<: *api-env
       # The API is only reachable from the web container and the host loopback; trust their forwarded headers.
@@ -82,6 +84,7 @@ services:
 
   worker:
     image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
     command: ["celery", "-A", "careerpilot.worker", "worker", "--loglevel=INFO",
               "-Q", "default,ingest,content,llm,media", "--concurrency=2"]
     environment: *api-env
@@ -100,6 +103,7 @@ services:
 
   beat:
     image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
     command: ["celery", "-A", "careerpilot.worker", "beat", "--loglevel=INFO",
               "--schedule=/tmp/celerybeat-schedule"]
     environment: *api-env
@@ -116,6 +120,7 @@ services:
       args:
         API_INTERNAL_URL: http://api:8000
     image: careerpilot-web:local
+    pull_policy: build
     ports:
       - "${WEB_PORT:-3000}:3000"
     depends_on:
