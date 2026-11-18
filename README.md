@@ -10,6 +10,8 @@
 
 ## Quick start
 
+🇫🇷 Guide pas à pas en français : [docs/guides/installation-locale-fr.md](docs/guides/installation-locale-fr.md)
+
 Requirements: Docker Engine with Compose v2 (Docker Desktop is not required: Podman, Colima or Rancher
 Desktop work too) and about 3 GB of free RAM.
 
