@@ -85,11 +85,17 @@ class OllamaProvider:
         if r.status_code != 200:
             raise LLMUnavailableError(f"Ollama returned {r.status_code}: {r.text[:200]}")
         body = r.json()
+        gen_seconds = body.get("eval_duration", 0) / 1e9
         structlog.get_logger("llm").info(
             "llm_call",
             model=self.model,
             seconds=round(body.get("total_duration", 0) / 1e9, 1),
             load_seconds=round(body.get("load_duration", 0) / 1e9, 1),
+            # Reading the prompt and generating are timed separately: a low tokens_per_s means the CPU is busy
+            # elsewhere (a build, a browser) or the model is swapping.
+            prompt_seconds=round(body.get("prompt_eval_duration", 0) / 1e9, 1),
+            gen_seconds=round(gen_seconds, 1),
+            tokens_per_s=round(body.get("eval_count", 0) / gen_seconds, 1) if gen_seconds else None,
             prompt_tokens=body.get("prompt_eval_count"),
             output_tokens=body.get("eval_count"),
             done_reason=body.get("done_reason"),
