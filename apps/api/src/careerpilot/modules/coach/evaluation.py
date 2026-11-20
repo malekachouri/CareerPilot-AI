@@ -428,7 +428,9 @@ DOMAINS = (
     "ticketing for events",
     "internal developer platform",
 )
-SIMILAR_RATIO = 0.8
+# Small models reuse one sentence template ("Design an API system for X that supports N users…"): only a
+# near-identical question counts as a repeat, otherwise every problem would be generated twice.
+SIMILAR_RATIO = 0.92
 
 
 def too_similar(question: str, previous: list[str]) -> bool:

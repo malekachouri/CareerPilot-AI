@@ -537,6 +537,15 @@ async def test_generated_problems_vary_their_domain_and_avoid_repeats() -> None:
     assert ev.pick_domain(avoid, random.Random(1)) == ev.DOMAINS[-1]  # noqa: S311
     assert ev.too_similar("Design a real-time video platform.", ["design a real-time video platform"])
     assert not ev.too_similar("Design a URL shortener.", ["Design a payment ledger for a bank."])
+    # Same template, different domain and numbers: not a repeat (seen with qwen3:1.7b).
+    assert not ev.too_similar(
+        "Design an API system for a logistics and shipping platform that supports 10,000 concurrent users, "
+        "with a latency of less than 500ms for API calls, and must handle 1,000 API requests per second.",
+        [
+            "Design an API system for a social network that supports 100 million concurrent users, with a "
+            "latency of less than 100ms for API calls, and must handle 10 million API requests per second."
+        ],
+    )
 
     class Repeating(FakeCoachLLM):
         async def structured(self, messages: Any, schema: dict[str, Any], **kw: Any) -> dict[str, Any]:
