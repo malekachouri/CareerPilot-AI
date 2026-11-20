@@ -13,6 +13,10 @@ def test_uuid7_is_version_7_and_time_ordered() -> None:
     assert all(u.version == 7 for u in ids)
     assert [u.int >> 80 for u in ids] == sorted(u.int >> 80 for u in ids)
     assert len(set(ids)) == 50
+    # Strictly increasing, even within one millisecond: messages written in one transaction keep their order.
+    many = [uuid7() for _ in range(2000)]
+    assert many == sorted(many) and len(set(many)) == 2000
+    assert all(u.version == 7 and u.variant == "specified in RFC 4122" for u in many)
 
 
 def test_password_hash_roundtrip() -> None:

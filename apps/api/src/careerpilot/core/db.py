@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -24,8 +25,17 @@ NAMING_CONVENTION = {
 }
 
 
+_uuid7_lock = threading.Lock()
+_uuid7_last = 0
+
+
 def uuid7() -> uuid.UUID:
-    """Time-ordered UUID (RFC 9562 v7) for index-friendly primary keys."""
+    """Time-ordered UUID (RFC 9562 v7) for index-friendly primary keys.
+
+    Monotonic within a process (RFC 9562 §6.2): rows created in the same millisecond, such as the messages
+    written in one transaction (which all share the same `now()`), still sort in creation order.
+    """
+    global _uuid7_last
     ts_ms = time.time_ns() // 1_000_000
     rand = int.from_bytes(os.urandom(10), "big")
     value = (ts_ms & ((1 << 48) - 1)) << 80
@@ -33,6 +43,10 @@ def uuid7() -> uuid.UUID:
     value |= ((rand >> 62) & 0xFFF) << 64
     value |= 0b10 << 62
     value |= rand & ((1 << 62) - 1)
+    with _uuid7_lock:
+        if value <= _uuid7_last:
+            value = _uuid7_last + 1  # same millisecond: increment (the random tail has room)
+        _uuid7_last = value
     return uuid.UUID(int=value)
 
 

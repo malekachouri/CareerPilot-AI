@@ -123,8 +123,14 @@ async def test_practice_flow_closed_question(client: httpx.AsyncClient, content:
     assert all(r["n"] == 1 for r in insight["data"]["references"])  # [42] did not exist and was dropped
     stem = q["data"]["question"]["stem"]
     assert all(stem[:60] not in r["title"] for r in insight["data"]["references"])  # never cites itself
+    # Messages written in one transaction keep their order: answer, evaluation, then recommendation.
+    kinds = [m["kind"] for m in s["messages"]]
+    assert kinds.index("answer") < kinds.index("evaluation") < kinds.index("recommendation")
     # STEP 5: recommendation with a lesson from the knowledge base.
     rec = last(s, "recommendation")
+    assert rec["data"]["weak_topics"] and all(  # a wrong answer: the topic is listed as weak
+        w["rating"] < 1000 or w["accuracy"] < 0.8 for w in rec["data"]["weak_topics"]
+    )
     assert rec["data"]["topic"] and rec["data"]["next_difficulty"] in (1, 2, 3, 4)
     if rec["data"]["lesson"]:  # a lesson is study material, never a question
         assert rec["data"]["lesson"]["kind"] in ("note", "doc", "upload")
