@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import difflib
+import random
 import re
 from typing import Any
 
@@ -229,6 +231,70 @@ def open_schema(agent: Agent, *, code: bool, interview: bool, compact: bool = Fa
     return {"type": "object", "properties": props, "required": required}
 
 
+# --- answer gate: small models praise anything, so unreadable answers never reach them --------------------
+
+_WORD = re.compile(r"[^\W\d_]{2,}")
+_VOWELS = "aeiouyàâäéèêëîïôöùûüœæ"
+_NO_VOWEL_RUN = re.compile(rf"[^{_VOWELS}]{{6,}}")
+MIN_WORDS = 5  # readable words below which an open answer is not sent to the model
+SHORT_WORDS = 30  # below this, completeness is capped: a 30-minute problem needs more than a few lines
+SHORT_COMPLETENESS_CAP = 2
+
+
+def _readable(word: str) -> bool:
+    w = word.lower()
+    return any(ch in _VOWELS for ch in w) and not _NO_VOWEL_RUN.search(w)
+
+
+def answer_problem(answer: str, *, code: bool) -> str | None:
+    """Why an answer cannot be evaluated (empty, too short, not readable), or None when it can."""
+    text = (answer or "").strip()
+    if code:
+        return None if len("".join(text.split())) >= 20 else "The code is empty or too short to evaluate."
+    words = _WORD.findall(text)
+    readable = [w for w in words if _readable(w)]
+    if len(readable) < MIN_WORDS or len(readable) < 0.6 * len(words):
+        return (
+            "This answer is too short or not readable, so it was not evaluated and scores 0. "
+            "Write a few full sentences: your approach, the main components and the trade-offs."
+        )
+    return None
+
+
+def readable_word_count(answer: str) -> int:
+    return sum(1 for w in _WORD.findall(answer or "") if _readable(w))
+
+
+def _not_evaluated(
+    crits: tuple[Criterion, ...], reason: str, *, code: bool, interview: bool
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "score": 0,
+        "verdict": verdict(0),
+        "criteria": [{"key": c.key, "label": c.label, "score": 0} for c in crits],
+        "feedback": reason,
+        "strengths": [],
+        "improvements": [reason],
+        "model_answer": "",
+        "concepts": [],
+        "real_world_example": "",
+        "common_mistakes": [],
+        "references": [],
+        "not_evaluated": True,
+    }
+    if code:
+        result |= {
+            "executed": False,
+            "traced_examples": "",
+            "complexity": {"time": "?", "space": "?"},
+            "issues": [reason],
+            "optimized_solution": "",
+        }
+    if interview:
+        result |= {"needs_follow_up": False, "follow_up_question": ""}
+    return result
+
+
 def overall_score(scores: dict[str, Any], criteria: tuple[Criterion, ...]) -> int:
     values = [max(0, min(5, int(scores.get(c.key, 0)))) for c in criteria]
     return round(100 * sum(values) / (5 * len(values))) if values else 0
@@ -254,6 +320,9 @@ async def evaluate_open(
     compact = is_compact(compact)
     passages = _trim(passages, compact)
     crits = criteria_for(agent, compact)
+    problem = answer_problem(answer, code=code)
+    if problem:
+        return _not_evaluated(crits, problem, code=code, interview=interview)
     criteria = "\n".join(f"- {c.key}: {c.label}. {c.description}" for c in crits)
     extras = (
         COMPACT_STYLE
@@ -270,7 +339,9 @@ async def evaluate_open(
                 f"{question}\n\n{ref}{code_part}Candidate answer:\n<<<\n{answer[:12000]}\n>>>\n\n"
                 f"{_block(passages, compact)}\n\nScore each criterion from 0 to 5:\n{criteria}\n"
                 f"{agent.evaluation_focus}\nDifferent wording or a different valid approach must not lose "
-                "points. Feedback must be constructive: what was good, what is missing, how to improve. "
+                "points. Evaluate ONLY the candidate answer between <<< and >>>, never the question itself. "
+                "If it is off-topic, copies the question, or does not answer it, score 0 to 1 everywhere "
+                "and say so. Feedback must be constructive: what was good, what is missing, how to improve. "
                 f"{extras}"
                 + (
                     " Decide needs_follow_up (true when a key point is missing or unclear) and write one "
@@ -284,6 +355,8 @@ async def evaluate_open(
         temperature=0.2,
     )
     scores = {c.key: max(0, min(5, int((out.get("scores") or {}).get(c.key, 0)))) for c in crits}
+    if not code and not interview and readable_word_count(answer) < SHORT_WORDS and "completeness" in scores:
+        scores["completeness"] = min(scores["completeness"], SHORT_COMPLETENESS_CAP)
     score = overall_score(scores, crits)
     texts = [
         str(out.get("feedback", "")),
@@ -336,16 +409,76 @@ OPEN_QUESTION_SCHEMA: dict[str, Any] = {
 }
 
 
+# Small models tend to repeat the same scenario: each generated problem is set in a different business domain.
+DOMAINS = (
+    "e-commerce",
+    "online banking",
+    "healthcare records",
+    "ride sharing",
+    "food delivery",
+    "IoT sensors",
+    "social network",
+    "logistics and shipping",
+    "online gaming",
+    "online education",
+    "SaaS analytics",
+    "travel booking",
+    "job board",
+    "music streaming",
+    "ticketing for events",
+    "internal developer platform",
+)
+SIMILAR_RATIO = 0.8
+
+
+def too_similar(question: str, previous: list[str]) -> bool:
+    q = question.lower()
+    return any(difflib.SequenceMatcher(None, q, p.lower()).ratio() >= SIMILAR_RATIO for p in previous)
+
+
+def pick_domain(avoid: list[str], rng: random.Random | None = None) -> str:
+    seen = " ".join(avoid).lower()
+    fresh = [d for d in DOMAINS if d.lower() not in seen] or list(DOMAINS)
+    return (rng or random.SystemRandom()).choice(fresh)
+
+
 async def generate_open_problem(
     llm: LLMProvider, agent: Agent, *, topic: str, difficulty: int, role: str, avoid: list[str]
 ) -> dict[str, Any]:
+    out = await _open_problem(llm, agent, topic, difficulty, role, avoid, pick_domain(avoid))
+    if too_similar(str(out.get("question", "")), avoid):  # one retry in another domain
+        tried = [*avoid, str(out.get("question", ""))]
+        out = await _open_problem(llm, agent, topic, difficulty, role, tried, pick_domain(tried))
+    if not str(out.get("question", "")).strip():
+        raise ValueError("the model returned an empty question")
+    return {
+        "question": str(out["question"]).strip(),
+        "context": str(out.get("context") or "").strip() or None,
+        "skill": str(out.get("skill") or topic),
+        "recommended_minutes": max(1, min(60, int(out.get("recommended_minutes") or 8))),
+        "reference_answer": str(out.get("reference_answer", "")),
+        "starter_code": str(out.get("starter_code") or "") or None,
+    }
+
+
+async def _open_problem(
+    llm: LLMProvider,
+    agent: Agent,
+    topic: str,
+    difficulty: int,
+    role: str,
+    avoid: list[str],
+    domain: str,
+) -> dict[str, Any]:
     levels = {1: "beginner", 2: "intermediate", 3: "advanced", 4: "expert"}
-    out = await llm.structured(
+    return await llm.structured(
         [
             Message("system", agent.system_prompt()),
             Message(
                 "user",
                 f"Write {agent.open_problem_brief}. Topic: {topic}. Level: {levels.get(difficulty, 'intermediate')}. "
+                f"Domain: set the scenario in {domain}. Match the scale to the level (a beginner problem "
+                "does not need millions of users). "
                 f"Candidate's target role: {role}. Put scenario details in `context`. `reference_answer` "
                 "lists the key points of a strong answer (it is hidden from the candidate). "
                 + (
@@ -359,16 +492,6 @@ async def generate_open_problem(
         OPEN_QUESTION_SCHEMA,
         temperature=0.7,
     )
-    if not str(out.get("question", "")).strip():
-        raise ValueError("the model returned an empty question")
-    return {
-        "question": str(out["question"]).strip(),
-        "context": str(out.get("context") or "").strip() or None,
-        "skill": str(out.get("skill") or topic),
-        "recommended_minutes": max(1, min(60, int(out.get("recommended_minutes") or 8))),
-        "reference_answer": str(out.get("reference_answer", "")),
-        "starter_code": str(out.get("starter_code") or "") or None,
-    }
 
 
 HINT_SCHEMA: dict[str, Any] = {

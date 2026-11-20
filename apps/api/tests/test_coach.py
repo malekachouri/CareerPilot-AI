@@ -17,6 +17,13 @@ from tests.conftest import csrf, login_as
 from tests.fakes import FakeCoachLLM, FakeEmbedder
 
 C = "/api/v1/coach"
+# A realistic open answer: long enough not to be gated or capped by the evaluation engine.
+DESIGN_ANSWER = (
+    "I would put the API behind a load balancer and run several stateless instances. Writes go to a "
+    "queue consumed by idempotent workers, so retries are safe. PostgreSQL stores the data with a read "
+    "replica, a cache absorbs frequent reads, and Prometheus alerts on latency and error rate. The main "
+    "trade-off is cost against availability."
+)
 
 
 def last(session: dict[str, Any], kind: str) -> dict[str, Any]:
@@ -186,9 +193,7 @@ async def test_open_problem_generated_scored_by_criteria_and_hidden_reference(
         and q["data"]["recommended_time_s"] == 720
     )
     assert "SECRET-REFERENCE" not in json.dumps(s)  # the reference answer stays server-side
-    s = await post(
-        client, f"{C}/sessions/{s['id']}/answer", {"text": "I would use a queue and idempotent consumers."}
-    )
+    s = await post(client, f"{C}/sessions/{s['id']}/answer", {"text": DESIGN_ANSWER})
     e = last(s, "evaluation")
     assert e["status"] == "done"
     assert len(e["data"]["criteria"]) == 10 and e["data"]["score"] == 80 and e["data"]["verdict"] == "strong"
@@ -439,9 +444,7 @@ async def test_compact_mode_scores_core_criteria_with_shorter_outputs(
     try:
         await login_as(client, "ada@example.org")
         s = await post(client, f"{C}/sessions", {"agent": "system-design"})
-        s = await post(
-            client, f"{C}/sessions/{s['id']}/answer", {"text": "A queue and idempotent consumers."}
-        )
+        s = await post(client, f"{C}/sessions/{s['id']}/answer", {"text": DESIGN_ANSWER})
     finally:
         settings.coach_compact = False
     e = last(s, "evaluation")
@@ -485,3 +488,60 @@ async def test_compact_explanation_is_short_and_replaced_in_full_mode(
     async with SessionFactory() as db:
         cached = (await db.scalars(select(CoachExplanation))).one()
         assert cached.prompt_version == ev.PROMPT_VERSION
+
+
+async def test_unreadable_or_short_answers_are_not_praised(client: httpx.AsyncClient, taxonomy: None) -> None:
+    from careerpilot.modules.coach import evaluation as ev
+
+    llm = FakeCoachLLM(score=5)
+    set_llm_override(llm)
+    await login_as(client, "ada@example.org")
+    s = await post(client, f"{C}/sessions", {"agent": "system-design"})
+    s = await post(client, f"{C}/sessions/{s['id']}/answer", {"text": "vdfwfdvfd edrftghyjuk"})
+    e = last(s, "evaluation")
+    # Gibberish never reaches the model (which would praise it) and scores 0.
+    assert e["status"] == "done" and e["data"]["score"] == 0 and e["data"]["not_evaluated"]
+    assert "evaluate" not in llm.calls and "not readable" in e["content"]
+
+    assert ev.answer_problem("Use a CDN.", code=False)  # too short
+    assert ev.answer_problem("kubectl get pods", code=True)  # code under 20 characters
+    assert ev.answer_problem(DESIGN_ANSWER, code=False) is None
+    assert (
+        ev.answer_problem("Les données passent par une file, puis des consommateurs idempotents.", code=False)
+        is None
+    )
+
+    # A short but real answer is evaluated, but cannot be "complete".
+    s = await post(client, f"{C}/sessions/{s['id']}/next")
+    s = await post(
+        client, f"{C}/sessions/{s['id']}/answer", {"text": "A load balancer, several instances and a cache."}
+    )
+    e = last(s, "evaluation")
+    completeness = next(c for c in e["data"]["criteria"] if c["key"] == "completeness")
+    assert completeness["score"] == ev.SHORT_COMPLETENESS_CAP and e["data"]["score"] < 100
+
+
+async def test_generated_problems_vary_their_domain_and_avoid_repeats() -> None:
+    import random
+
+    from careerpilot.modules.coach import evaluation as ev
+    from careerpilot.modules.coach.agents import AGENTS
+
+    avoid = [f"Design a system for {d}" for d in ev.DOMAINS[:-1]]
+    assert ev.pick_domain(avoid, random.Random(1)) == ev.DOMAINS[-1]  # noqa: S311
+    assert ev.too_similar("Design a real-time video platform.", ["design a real-time video platform"])
+    assert not ev.too_similar("Design a URL shortener.", ["Design a payment ledger for a bank."])
+
+    class Repeating(FakeCoachLLM):
+        async def structured(self, messages: Any, schema: dict[str, Any], **kw: Any) -> dict[str, Any]:
+            out = await super().structured(messages, schema, **kw)
+            if self.calls.count("open_problem") == 1:
+                out["question"] = "Design a real-time video streaming platform."
+            return out
+
+    llm = Repeating()
+    out = await ev.generate_open_problem(
+        llm, AGENTS["system-design"], topic="system-design", difficulty=1, role="DevOps",
+        avoid=["Design a real-time video streaming platform."],
+    )  # fmt: skip
+    assert llm.calls.count("open_problem") == 2 and "video" not in out["question"]

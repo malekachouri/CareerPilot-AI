@@ -84,8 +84,9 @@ class FakeCoachLLM:
             return out
         if "reference_answer" in props:
             self.calls.append("open_problem")
+            domain = re.search(r"set the scenario in ([^.]+)\.", prompt)
             return {
-                "question": f"Design problem #{self.counter}: build a job alert service.",
+                "question": f"Design problem #{self.counter}: build a {domain.group(1) if domain else 'job'} service.",
                 "context": "10k users",
                 "skill": "system design",
                 "recommended_minutes": 12,
