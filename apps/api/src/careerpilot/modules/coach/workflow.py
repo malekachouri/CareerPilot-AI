@@ -419,10 +419,12 @@ async def recommendation(
     skills = await user_skills(db, session.user_id)
     agent = agent_of(session)
     in_scope = [s for s in skills if s.slug in agent.categories and s.answered > 0]
+    # Only topics that are actually weak: below the starting rating or under 80 % accuracy.
     weak = [
         {"slug": s.slug, "name": s.name, "rating": round(s.rating), "accuracy": s.accuracy}
-        for s in in_scope[:3]
-    ]
+        for s in in_scope
+        if s.rating < 1000 or (s.accuracy is not None and s.accuracy < 0.8)
+    ][:3]
     topic: str | None = cur.get("topic") or (str(weak[0]["slug"]) if weak else None)
     lesson = None
     if topic:
@@ -647,7 +649,7 @@ async def _job_evaluate_open(
     answer = await db.scalar(
         select(CoachMessage)
         .where(CoachMessage.session_id == session.id, CoachMessage.kind == "answer")
-        .order_by(CoachMessage.created_at.desc())
+        .order_by(CoachMessage.created_at.desc(), CoachMessage.id.desc())
     )
     assert answer is not None
     text = answer.data.get("text") or answer.content
@@ -843,7 +845,7 @@ async def _job_chat(
                 CoachMessage.kind == "chat",
                 CoachMessage.status == "done",
             )
-            .order_by(CoachMessage.created_at)
+            .order_by(CoachMessage.created_at, CoachMessage.id)
         )
     ]
     passages = await kb.search(

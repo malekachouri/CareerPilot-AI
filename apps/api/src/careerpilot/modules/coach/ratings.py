@@ -129,7 +129,7 @@ async def recently_seen(db: AsyncSession, user_id: uuid.UUID, limit: int = 300) 
             CoachMessage.kind == "question",
             CoachMessage.data["question_id"].astext.is_not(None),
         )
-        .order_by(CoachMessage.created_at.desc())
+        .order_by(CoachMessage.created_at.desc(), CoachMessage.id.desc())
         .limit(limit)
     )
     seen |= {uuid.UUID(q) for q in coach if q}
