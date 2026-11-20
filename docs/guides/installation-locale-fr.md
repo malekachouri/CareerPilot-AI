@@ -90,6 +90,21 @@ Sous Windows (WSL), vous pouvez aussi donner plus de RAM à WSL : créez `C:\Use
 `[wsl2]` puis `memory=10GB` (sans dépasser ~75 % de la RAM du PC), lancez `wsl --shutdown` dans PowerShell et
 redémarrez Docker Desktop. Fermer le navigateur et les applications lourdes libère aussi de la mémoire.
 
+### Mode léger (petits modèles, processeur seul)
+
+Avec `qwen3:1.7b` sur un processeur, une correction de réponse ouverte prend environ 75 s. Le mode léger la
+raccourcit : 6 critères au lieu de 10, un feedback de quelques phrases, moins de passages de référence. C'est
+environ deux fois plus rapide, mais moins détaillé (pas de « concepts », d'exemple réel ni d'erreurs courantes).
+
+```bash
+grep -q '^COACH_COMPACT=' .env || echo 'COACH_COMPACT=false' >> .env
+sed -i 's/^COACH_COMPACT=.*/COACH_COMPACT=true/' .env
+docker compose --profile ai up -d
+```
+
+Pour revenir au mode complet, remettez `COACH_COMPACT=false`. Les explications courtes déjà en cache seront
+regénérées en version complète.
+
 ## 5. Importer vos tests privés (dépôt privé)
 
 ```bash

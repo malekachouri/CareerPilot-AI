@@ -416,3 +416,72 @@ async def test_slow_model_explains_memory_and_smaller_model(
     q = last(s, "question")
     assert q["status"] == "failed"
     assert "not enough free memory" in q["content"] and "qwen3:1.7b" in q["content"]
+
+
+async def test_compact_mode_scores_core_criteria_with_shorter_outputs(
+    client: httpx.AsyncClient, taxonomy: None
+) -> None:
+    from careerpilot.core.config import get_settings
+
+    class RecordingLLM(FakeCoachLLM):
+        def __init__(self) -> None:
+            super().__init__(score=4)
+            self.seen: list[tuple[str, dict[str, Any]]] = []
+
+        async def structured(self, messages: Any, schema: dict[str, Any], **kw: Any) -> dict[str, Any]:
+            self.seen.append((messages[-1].content, schema))
+            return await super().structured(messages, schema, **kw)
+
+    llm = RecordingLLM()
+    set_llm_override(llm)
+    settings = get_settings()
+    settings.coach_compact = True
+    try:
+        await login_as(client, "ada@example.org")
+        s = await post(client, f"{C}/sessions", {"agent": "system-design"})
+        s = await post(
+            client, f"{C}/sessions/{s['id']}/answer", {"text": "A queue and idempotent consumers."}
+        )
+    finally:
+        settings.coach_compact = False
+    e = last(s, "evaluation")
+    assert e["status"] == "done"
+    # Only the six core criteria, still scored from the criteria (4/5 everywhere = 80).
+    assert len(e["data"]["criteria"]) == 6 and e["data"]["score"] == 80
+    prompt, schema = next((p, sc) for p, sc in llm.seen if "scores" in sc["properties"])
+    assert len(schema["properties"]["scores"]["required"]) == 6
+    assert not {"concepts", "real_world_example", "common_mistakes"} & set(schema["properties"])
+    assert "Be brief" in prompt
+
+
+async def test_compact_explanation_is_short_and_replaced_in_full_mode(
+    client: httpx.AsyncClient, content: None
+) -> None:
+    from careerpilot.core.config import get_settings
+    from careerpilot.modules.coach import evaluation as ev
+
+    set_llm_override(FakeCoachLLM())
+    settings = get_settings()
+    await login_as(client, "ada@example.org")
+    settings.coach_compact = True
+    try:
+        s = await post(client, f"{C}/sessions", {"agent": "devops"})
+        q = last(s, "question")
+        key = await key_of(q["data"]["question_id"])
+        s = await post(client, f"{C}/sessions/{s['id']}/answer", {"selected": key})
+    finally:
+        settings.coach_compact = False
+    assert last(s, "insight")["status"] == "done"
+    async with SessionFactory() as db:
+        cached = (await db.scalars(select(CoachExplanation))).one()
+        assert cached.prompt_version == ev.COMPACT_PROMPT_VERSION
+        assert "concepts" not in ev.COMPACT_ENRICH_SCHEMA["properties"]
+
+    # Same question in full mode: the short explanation is regenerated, not reused.
+    s2 = await post(client, f"{C}/sessions", {"agent": "devops", "question_id": q["data"]["question_id"]})
+    assert last(s2, "question")["data"]["question_id"] == q["data"]["question_id"]
+    s2 = await post(client, f"{C}/sessions/{s2['id']}/answer", {"selected": key})
+    assert last(s2, "insight")["status"] == "done"
+    async with SessionFactory() as db:
+        cached = (await db.scalars(select(CoachExplanation))).one()
+        assert cached.prompt_version == ev.PROMPT_VERSION

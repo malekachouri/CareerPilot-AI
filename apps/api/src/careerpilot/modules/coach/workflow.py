@@ -395,7 +395,8 @@ async def _evaluate_closed(
         )
     if v.answer_key:
         cached = await db.get(CoachExplanation, v.id)
-        if cached:
+        # A short (compact-mode) explanation is not reused once the full mode is back on.
+        if cached and (cached.prompt_version == ev.prompt_version() or ev.is_compact()):
             msgs.append(await add_message(db, session, role="coach", kind="insight", data=cached.data))
         else:
             insight = await add_message(
@@ -626,12 +627,13 @@ async def _job_enrich(
         )
         msg.data = {"discarded": True}
         return
-    db.add(
+    # merge: replaces a short compact-mode explanation when the full mode regenerates it.
+    await db.merge(
         CoachExplanation(
             question_version_id=v.id,
             data=data,
             model=f"{llm.name}:{llm.model}",
-            prompt_version=ev.PROMPT_VERSION,
+            prompt_version=ev.prompt_version(),
         )
     )
     msg.data = data
