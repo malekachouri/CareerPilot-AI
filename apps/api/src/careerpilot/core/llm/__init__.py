@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 import httpx
+import structlog
 
 from careerpilot.core.config import get_settings
 
@@ -42,11 +43,21 @@ class OllamaProvider:
     name = "ollama"
 
     def __init__(
-        self, base_url: str, model: str, timeout: float, *, num_ctx: int = 4096, keep_alive: str = "30m"
+        self,
+        base_url: str,
+        model: str,
+        timeout: float,
+        *,
+        num_ctx: int = 4096,
+        keep_alive: str = "30m",
+        max_tokens: int = 1200,
     ) -> None:
         self.base_url, self.model, self.timeout = base_url.rstrip("/"), model, timeout
         # A shorter context uses less RAM; keep_alive avoids reloading the model between coach steps.
         self.num_ctx, self.keep_alive = num_ctx, keep_alive
+        # Hard cap on generated tokens: small models constrained to JSON can loop until the context is full,
+        # which takes many minutes on a CPU.
+        self.max_tokens = max_tokens
 
     async def structured(
         self, messages: list[Message], schema: dict[str, Any], *, temperature: float = 0.4
@@ -58,7 +69,7 @@ class OllamaProvider:
             "stream": False,
             "think": False,
             "keep_alive": self.keep_alive,
-            "options": {"temperature": temperature, "num_ctx": self.num_ctx},
+            "options": {"temperature": temperature, "num_ctx": self.num_ctx, "num_predict": self.max_tokens},
         }
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -73,7 +84,22 @@ class OllamaProvider:
             raise LLMUnavailableError(f"Model '{self.model}' is not available. Run: ollama pull {self.model}")
         if r.status_code != 200:
             raise LLMUnavailableError(f"Ollama returned {r.status_code}: {r.text[:200]}")
-        content = r.json().get("message", {}).get("content", "")
+        body = r.json()
+        structlog.get_logger("llm").info(
+            "llm_call",
+            model=self.model,
+            seconds=round(body.get("total_duration", 0) / 1e9, 1),
+            load_seconds=round(body.get("load_duration", 0) / 1e9, 1),
+            prompt_tokens=body.get("prompt_eval_count"),
+            output_tokens=body.get("eval_count"),
+            done_reason=body.get("done_reason"),
+        )
+        if body.get("done_reason") == "length":
+            raise ValueError(
+                f"the model's answer was cut off after {self.max_tokens} tokens; "
+                "retry (or raise LLM_MAX_TOKENS)"
+            )
+        content = body.get("message", {}).get("content", "")
         try:
             data = json.loads(content)
         except json.JSONDecodeError as exc:
@@ -119,6 +145,7 @@ def get_llm() -> LLMProvider:
             s.llm_timeout_seconds,
             num_ctx=s.llm_num_ctx,
             keep_alive=s.llm_keep_alive,
+            max_tokens=s.llm_max_tokens,
         )
     return DisabledProvider()
 
