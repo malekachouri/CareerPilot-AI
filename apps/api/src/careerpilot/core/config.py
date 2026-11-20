@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     llm_num_ctx: int = 4096  # context window: smaller = less RAM
     llm_max_tokens: int = 1200  # cap on generated tokens per call (stops runaway generation)
     llm_keep_alive: str = "30m"  # keep the model loaded between coach steps
+    # Lightweight coach for small CPU models: 6 core criteria, short feedback, fewer passages (~2x faster).
+    coach_compact: bool = False
     # Embeddings for RAG (empty = full-text search only). Must produce 768-d vectors (see kb/models.py).
     embedding_model: str = "nomic-embed-text"
 

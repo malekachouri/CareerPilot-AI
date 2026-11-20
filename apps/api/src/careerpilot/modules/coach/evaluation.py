@@ -12,24 +12,55 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from careerpilot.core.config import get_settings
 from careerpilot.core.llm import LLMProvider, Message
 from careerpilot.modules.coach.agents import Agent
+from careerpilot.modules.coach.agents.base import CORE_CRITERIA, Criterion
 from careerpilot.modules.content.models import QuestionVersion
 from careerpilot.modules.kb.service import Passage
 
 PROMPT_VERSION = "coach-v1"
+COMPACT_PROMPT_VERSION = "coach-v1-compact"
+# Compact mode: fewer, shorter reference passages (the prompt is read faster) and shorter outputs.
+COMPACT_PASSAGES, COMPACT_PASSAGE_CHARS = 2, 600
+COMPACT_STYLE = (
+    "Be brief: at most 3 short sentences of feedback, at most 3 strengths and 3 improvements, "
+    "and a model answer of at most 120 words."
+)
 
 STR_LIST: dict[str, Any] = {"type": "array", "items": {"type": "string"}}
 INT_LIST: dict[str, Any] = {"type": "array", "items": {"type": "integer"}}
 
 
-def passages_block(passages: list[Passage]) -> str:
+def is_compact(compact: bool | None = None) -> bool:
+    """Explicit value (tests) or the COACH_COMPACT setting."""
+    return get_settings().coach_compact if compact is None else compact
+
+
+def prompt_version(compact: bool | None = None) -> str:
+    return COMPACT_PROMPT_VERSION if is_compact(compact) else PROMPT_VERSION
+
+
+def criteria_for(agent: Agent, compact: bool) -> tuple[Criterion, ...]:
+    """Compact mode scores only the six core criteria (Prompt 3 §4); full mode adds the agent's own."""
+    return CORE_CRITERIA if compact else agent.criteria
+
+
+def _trim(passages: list[Passage], compact: bool) -> list[Passage]:
+    return passages[:COMPACT_PASSAGES] if compact else passages
+
+
+def passages_block(passages: list[Passage], *, max_chars: int = 1500) -> str:
     if not passages:
         return "No reference passages were retrieved: answer from general knowledge and cite nothing."
     lines = ["Reference passages (cite as [n] only when you use them):"]
     for i, p in enumerate(passages, start=1):
-        lines.append(f"[{i}] {p.title}{' — ' + p.heading if p.heading else ''}\n{p.text[:1500]}")
+        lines.append(f"[{i}] {p.title}{' — ' + p.heading if p.heading else ''}\n{p.text[:max_chars]}")
     return "\n\n".join(lines)
+
+
+def _block(passages: list[Passage], compact: bool) -> str:
+    return passages_block(passages, max_chars=COMPACT_PASSAGE_CHARS if compact else 1500)
 
 
 def resolve_citations(raw: Any, passages: list[Passage], *texts: str) -> list[dict[str, Any]]:
@@ -101,24 +132,46 @@ ENRICH_SCHEMA: dict[str, Any] = {
 }
 
 
+COMPACT_ENRICH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        k: ENRICH_SCHEMA["properties"][k]
+        for k in ("correct_option_ids", "reasoning_steps", "why_wrong", "citations")
+    },
+    "required": ["correct_option_ids", "reasoning_steps", "why_wrong"],
+}
+
+
 async def enrich_closed(
-    llm: LLMProvider, agent: Agent, v: QuestionVersion, passages: list[Passage]
+    llm: LLMProvider,
+    agent: Agent,
+    v: QuestionVersion,
+    passages: list[Passage],
+    *,
+    compact: bool | None = None,
 ) -> dict[str, Any] | None:
     """Teaching material for a keyed question. Returns None when the model contradicts the key."""
+    compact = is_compact(compact)
+    passages = _trim(passages, compact)
     key = ", ".join(v.answer_key or [])
+    task = (
+        "Teach it briefly: correct_option_ids (repeat the correct ids), reasoning_steps (2-3 short steps) "
+        "and one short sentence in why_wrong for every other option."
+        if compact
+        else "Teach it: correct_option_ids (repeat the correct ids), reasoning_steps (3-5 short steps), "
+        "why_wrong for every other option, key concepts, one real-world example from production "
+        "work, and the common mistakes candidates make in interviews."
+    )
     out = await llm.structured(
         [
             Message("system", agent.system_prompt()),
             Message(
                 "user",
                 f"{question_text(v)}\n\nThe correct option(s) are: {key}. This is fixed: do not dispute it.\n"
-                f"Stored explanation: {v.explanation or '(none)'}\n\n{passages_block(passages)}\n\n"
-                "Teach it: correct_option_ids (repeat the correct ids), reasoning_steps (3-5 short steps), "
-                "why_wrong for every other option, key concepts, one real-world example from production "
-                "work, and the common mistakes candidates make in interviews.",
+                f"Stored explanation: {v.explanation or '(none)'}\n\n{_block(passages, compact)}\n\n{task}",
             ),
         ],
-        ENRICH_SCHEMA,
+        COMPACT_ENRICH_SCHEMA if compact else ENRICH_SCHEMA,
         temperature=0.2,
     )
     if set(map(str, out.get("correct_option_ids", []))) != set(v.answer_key or []):
@@ -145,23 +198,21 @@ async def enrich_closed(
 # --- open answers ----------------------------------------------------------------------------------------
 
 
-def open_schema(agent: Agent, *, code: bool, interview: bool) -> dict[str, Any]:
-    scores = {c.key: {"type": "integer", "minimum": 0, "maximum": 5} for c in agent.criteria}
+def open_schema(agent: Agent, *, code: bool, interview: bool, compact: bool = False) -> dict[str, Any]:
+    scores = {c.key: {"type": "integer", "minimum": 0, "maximum": 5} for c in criteria_for(agent, compact)}
     props: dict[str, Any] = {
         "scores": {"type": "object", "properties": scores, "required": list(scores)},
         "feedback": {"type": "string"},
         "strengths": STR_LIST,
         "improvements": STR_LIST,
         "model_answer": {"type": "string"},
-        "concepts": STR_LIST,
-        "real_world_example": {"type": "string"},
-        "common_mistakes": STR_LIST,
         "citations": INT_LIST,
     }
+    if not compact:
+        props |= {"concepts": STR_LIST, "real_world_example": {"type": "string"}, "common_mistakes": STR_LIST}
     required = ["scores", "feedback", "strengths", "improvements", "model_answer"]
     if code:
         props |= {
-            "traced_examples": {"type": "string"},
             "complexity": {
                 "type": "object",
                 "properties": {"time": {"type": "string"}, "space": {"type": "string"}},
@@ -169,6 +220,8 @@ def open_schema(agent: Agent, *, code: bool, interview: bool) -> dict[str, Any]:
             "issues": STR_LIST,
             "optimized_solution": {"type": "string"},
         }
+        if not compact:
+            props["traced_examples"] = {"type": "string"}
         required += ["complexity", "optimized_solution"]
     if interview:
         props |= {"follow_up_question": {"type": "string"}, "needs_follow_up": {"type": "boolean"}}
@@ -176,8 +229,8 @@ def open_schema(agent: Agent, *, code: bool, interview: bool) -> dict[str, Any]:
     return {"type": "object", "properties": props, "required": required}
 
 
-def overall_score(scores: dict[str, Any], agent: Agent) -> int:
-    values = [max(0, min(5, int(scores.get(c.key, 0)))) for c in agent.criteria]
+def overall_score(scores: dict[str, Any], criteria: tuple[Criterion, ...]) -> int:
+    values = [max(0, min(5, int(scores.get(c.key, 0)))) for c in criteria]
     return round(100 * sum(values) / (5 * len(values))) if values else 0
 
 
@@ -196,8 +249,17 @@ async def evaluate_open(
     code: bool = False,
     interview: bool = False,
     language: str | None = None,
+    compact: bool | None = None,
 ) -> dict[str, Any]:
-    criteria = "\n".join(f"- {c.key}: {c.label}. {c.description}" for c in agent.criteria)
+    compact = is_compact(compact)
+    passages = _trim(passages, compact)
+    crits = criteria_for(agent, compact)
+    criteria = "\n".join(f"- {c.key}: {c.label}. {c.description}" for c in crits)
+    extras = (
+        COMPACT_STYLE
+        if compact
+        else "Give a model answer, key concepts, a real-world example and common interview mistakes."
+    )
     ref = f"Reference points (guidance, not the only valid wording): {reference}\n" if reference else ""
     code_part = f"The answer is {language or 'code'}.\n" if code else ""
     out = await llm.structured(
@@ -206,10 +268,10 @@ async def evaluate_open(
             Message(
                 "user",
                 f"{question}\n\n{ref}{code_part}Candidate answer:\n<<<\n{answer[:12000]}\n>>>\n\n"
-                f"{passages_block(passages)}\n\nScore each criterion from 0 to 5:\n{criteria}\n"
+                f"{_block(passages, compact)}\n\nScore each criterion from 0 to 5:\n{criteria}\n"
                 f"{agent.evaluation_focus}\nDifferent wording or a different valid approach must not lose "
                 "points. Feedback must be constructive: what was good, what is missing, how to improve. "
-                "Give a model answer, key concepts, a real-world example and common interview mistakes."
+                f"{extras}"
                 + (
                     " Decide needs_follow_up (true when a key point is missing or unclear) and write one "
                     "short follow_up_question that probes it."
@@ -218,11 +280,11 @@ async def evaluate_open(
                 ),
             ),
         ],
-        open_schema(agent, code=code, interview=interview),
+        open_schema(agent, code=code, interview=interview, compact=compact),
         temperature=0.2,
     )
-    scores = {c.key: max(0, min(5, int((out.get("scores") or {}).get(c.key, 0)))) for c in agent.criteria}
-    score = overall_score(scores, agent)
+    scores = {c.key: max(0, min(5, int((out.get("scores") or {}).get(c.key, 0)))) for c in crits}
+    score = overall_score(scores, crits)
     texts = [
         str(out.get("feedback", "")),
         str(out.get("model_answer", "")),
@@ -231,7 +293,7 @@ async def evaluate_open(
     result: dict[str, Any] = {
         "score": score,
         "verdict": verdict(score),
-        "criteria": [{"key": c.key, "label": c.label, "score": scores[c.key]} for c in agent.criteria],
+        "criteria": [{"key": c.key, "label": c.label, "score": scores[c.key]} for c in crits],
         "feedback": strip_bad_markers(texts[0], passages),
         "strengths": [str(s) for s in out.get("strengths", [])][:6],
         "improvements": [str(s) for s in out.get("improvements", [])][:6],
@@ -356,7 +418,10 @@ async def tutor_chat(
     history: list[str],
     passages: list[Passage],
     may_reveal: bool,
+    compact: bool | None = None,
 ) -> dict[str, Any]:
+    compact = is_compact(compact)
+    passages = _trim(passages, compact)
     rule = (
         "You may discuss the answer."
         if may_reveal
@@ -370,7 +435,9 @@ async def tutor_chat(
                 (f"Current question:\n{question}\n\n" if question else "")
                 + f"{rule}\n"
                 + ("Recent conversation:\n" + "\n".join(history[-6:]) + "\n\n" if history else "")
-                + f"{passages_block(passages)}\n\nLearner: {message[:4000]}",
+                + f"{_block(passages, compact)}\n\n"
+                + ("Answer in at most 5 sentences.\n" if compact else "")
+                + f"Learner: {message[:4000]}",
             ),
         ],
         CHAT_SCHEMA,
