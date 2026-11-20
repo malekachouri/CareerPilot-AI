@@ -388,6 +388,14 @@ async def test_ollama_provider_sends_memory_settings_and_reports_timeouts() -> N
         and sent["format"] == {"type": "object"}
     )
 
+    assert sent["options"]["num_predict"] == 1200
+
+    respx.post("http://ollama.test/api/chat").respond(
+        json={"message": {"content": '{"a": '}, "done_reason": "length"}
+    )
+    with pytest.raises(ValueError, match="cut off"):
+        await provider.structured([], {"type": "object"})
+
     respx.post("http://ollama.test/api/chat").mock(side_effect=httpx.ReadTimeout("slow"))
     with pytest.raises(LLMTimeoutError, match="did not answer within 5s"):
         await provider.structured([], {"type": "object"})
