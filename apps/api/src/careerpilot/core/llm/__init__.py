@@ -15,6 +15,10 @@ class LLMUnavailableError(Exception):
     """No model is reachable (Ollama not running, model not pulled, provider disabled)."""
 
 
+class LLMTimeoutError(LLMUnavailableError):
+    """The model is reachable but too slow: almost always not enough free RAM (the model swaps to disk)."""
+
+
 @dataclass(frozen=True)
 class Message:
     role: str  # system | user | assistant
@@ -37,8 +41,12 @@ class OllamaProvider:
 
     name = "ollama"
 
-    def __init__(self, base_url: str, model: str, timeout: float) -> None:
+    def __init__(
+        self, base_url: str, model: str, timeout: float, *, num_ctx: int = 4096, keep_alive: str = "30m"
+    ) -> None:
         self.base_url, self.model, self.timeout = base_url.rstrip("/"), model, timeout
+        # A shorter context uses less RAM; keep_alive avoids reloading the model between coach steps.
+        self.num_ctx, self.keep_alive = num_ctx, keep_alive
 
     async def structured(
         self, messages: list[Message], schema: dict[str, Any], *, temperature: float = 0.4
@@ -49,11 +57,16 @@ class OllamaProvider:
             "format": schema,
             "stream": False,
             "think": False,
-            "options": {"temperature": temperature},
+            "keep_alive": self.keep_alive,
+            "options": {"temperature": temperature, "num_ctx": self.num_ctx},
         }
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 r = await client.post(f"{self.base_url}/api/chat", json=payload)
+        except httpx.TimeoutException as exc:
+            raise LLMTimeoutError(
+                f"The model '{self.model}' did not answer within {self.timeout:.0f}s"
+            ) from exc
         except httpx.HTTPError as exc:
             raise LLMUnavailableError(f"Ollama is not reachable at {self.base_url}: {exc}") from exc
         if r.status_code == 404:
@@ -100,7 +113,13 @@ def get_llm() -> LLMProvider:
         return _override
     s = get_settings()
     if s.llm_provider == "ollama":
-        return OllamaProvider(s.ollama_url, s.llm_model, s.llm_timeout_seconds)
+        return OllamaProvider(
+            s.ollama_url,
+            s.llm_model,
+            s.llm_timeout_seconds,
+            num_ctx=s.llm_num_ctx,
+            keep_alive=s.llm_keep_alive,
+        )
     return DisabledProvider()
 
 
@@ -135,8 +154,11 @@ class OllamaEmbedder:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 r = await client.post(
-                    f"{self.base_url}/api/embed", json={"model": self.model, "input": texts}
+                    f"{self.base_url}/api/embed",
+                    json={"model": self.model, "input": texts, "keep_alive": "30m"},
                 )
+        except httpx.TimeoutException as exc:
+            raise LLMTimeoutError(f"The embedding model '{self.model}' did not answer in time") from exc
         except httpx.HTTPError as exc:
             raise LLMUnavailableError(f"Ollama is not reachable at {self.base_url}: {exc}") from exc
         if r.status_code != 200:
