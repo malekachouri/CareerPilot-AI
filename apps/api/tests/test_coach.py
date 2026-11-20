@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 import pytest
+import respx
 from sqlalchemy import select
 
 from careerpilot.core.db import SessionFactory
@@ -371,3 +372,39 @@ async def test_every_bank_agent_starts_with_a_question_from_its_topics(
     q = last(s, "question")
     assert q["status"] == "done"
     assert {sk["slug"] for sk in q["data"]["skills"]} & set(agents[agent]["categories"])
+
+
+@respx.mock
+async def test_ollama_provider_sends_memory_settings_and_reports_timeouts() -> None:
+    from careerpilot.core.llm import LLMTimeoutError, OllamaProvider
+
+    route = respx.post("http://ollama.test/api/chat").respond(json={"message": {"content": '{"ok": true}'}})
+    provider = OllamaProvider("http://ollama.test", "qwen3:4b", 5, num_ctx=2048, keep_alive="15m")
+    assert await provider.structured([], {"type": "object"}) == {"ok": True}
+    sent = json.loads(route.calls[0].request.content)
+    assert (
+        sent["options"]["num_ctx"] == 2048
+        and sent["keep_alive"] == "15m"
+        and sent["format"] == {"type": "object"}
+    )
+
+    respx.post("http://ollama.test/api/chat").mock(side_effect=httpx.ReadTimeout("slow"))
+    with pytest.raises(LLMTimeoutError, match="did not answer within 5s"):
+        await provider.structured([], {"type": "object"})
+
+
+async def test_slow_model_explains_memory_and_smaller_model(
+    client: httpx.AsyncClient, taxonomy: None
+) -> None:
+    from careerpilot.core.llm import LLMTimeoutError
+
+    class SlowLLM(FakeCoachLLM):
+        async def structured(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+            raise LLMTimeoutError("The model 'qwen3:4b' did not answer within 300s")
+
+    set_llm_override(SlowLLM())
+    await login_as(client, "ada@example.org")
+    s = await post(client, f"{C}/sessions", {"agent": "system-design"})
+    q = last(s, "question")
+    assert q["status"] == "failed"
+    assert "not enough free memory" in q["content"] and "qwen3:1.7b" in q["content"]

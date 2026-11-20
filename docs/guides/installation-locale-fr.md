@@ -66,6 +66,30 @@ Sans IA, les tests, les statistiques et les QCM du coach fonctionnent. L'IA ajou
 les réponses ouvertes, les entretiens simulés, les indices, le tuteur et le générateur. Sur un CPU, une réponse
 peut prendre de 20 secondes à 1 minute.
 
+### Mémoire : choisir le bon modèle
+
+L'IA tourne sur le processeur. Si elle n'a pas assez de RAM libre, elle utilise le disque (swap) et devient
+des dizaines de fois plus lente. Le coach affiche alors « The local model took too long… ». Vérifiez avec
+`free -h` (colonne *available*) :
+
+| RAM disponible | Modèle conseillé (`LLM_MODEL` dans `.env`) | Qualité |
+|----------------|--------------------------------------------|---------|
+| ≥ 6 Go | `qwen3:4b` (défaut) | Bonne |
+| 3–6 Go | `qwen3:1.7b` | Correcte |
+| < 3 Go | `qwen3:0.6b` | Basique (tests seulement) |
+
+Pour changer de modèle :
+
+```bash
+docker compose exec ollama ollama pull qwen3:1.7b
+sed -i 's/^LLM_MODEL=.*/LLM_MODEL=qwen3:1.7b/' .env
+docker compose up -d
+```
+
+Sous Windows (WSL), vous pouvez aussi donner plus de RAM à WSL : créez `C:\Users\<vous>\.wslconfig` avec
+`[wsl2]` puis `memory=10GB` (sans dépasser ~75 % de la RAM du PC), lancez `wsl --shutdown` dans PowerShell et
+redémarrez Docker Desktop. Fermer le navigateur et les applications lourdes libère aussi de la mémoire.
+
 ## 5. Importer vos tests privés (dépôt privé)
 
 ```bash
@@ -104,5 +128,5 @@ docker compose down -v                       # ⚠ supprime aussi toutes les don
 | Port 3000 ou 8000 déjà utilisé | Mettez `WEB_PORT=3001` dans `.env`. Pour 8000 ou 5432, arrêtez l'autre programme. |
 | Un service ne démarre pas | `docker compose ps`, puis `docker compose logs -f api worker web` |
 | « Local model not available » | Lancez l'étape 4, et vérifiez avec `docker compose exec ollama ollama list` |
-| Le coach reste sur « thinking… » | `docker compose logs -f worker` (modèle lent ou absent) |
+| Le coach reste sur « thinking… » ou « took too long » | Manque de RAM (voir « Mémoire » ci-dessus). Suivez `docker compose logs -f worker-ai`. |
 | Windows : Docker très lent | Gardez le projet dans le système de fichiers WSL (`\\wsl$\...`) plutôt que dans `C:\` |

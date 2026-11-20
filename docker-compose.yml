@@ -14,6 +14,8 @@ x-api-env: &api-env
   CONTENT_DIRS: '["/content"]'
   OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
   LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+  LLM_NUM_CTX: ${LLM_NUM_CTX:-4096}
+  LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-300}
   EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
   GITHUB_TOKEN: ${GITHUB_TOKEN:-}
 
@@ -55,6 +57,7 @@ services:
   migrate:
     build: ./apps/api
     image: careerpilot-api:local
+    pull_policy: build
     # Schema migrations, then the idempotent seed (taxonomy, sources, original questions, curated tests).
     command: ["sh", "-c", "alembic upgrade head && careerpilot seed"]
     environment: *api-env
@@ -66,6 +69,7 @@ services:
 
   api:
     image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
     environment:
       <<: *api-env
       # The API is only reachable from the web container and the host loopback; trust their forwarded headers.
@@ -82,8 +86,9 @@ services:
 
   worker:
     image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
     command: ["celery", "-A", "careerpilot.worker", "worker", "--loglevel=INFO",
-              "-Q", "default,ingest,content,llm,media", "--concurrency=2"]
+              "-Q", "default,ingest,content,media", "--concurrency=2"]
     environment: *api-env
     volumes: *content-mount
     healthcheck:
@@ -98,8 +103,30 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # AI jobs (coach, question generator) run one at a time: two simultaneous CPU inferences would compete for
+  # RAM and CPU and both become very slow.
+  worker-ai:
+    image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
+    command: ["celery", "-A", "careerpilot.worker", "worker", "--loglevel=INFO", "-n", "ai@%h",
+              "-Q", "llm", "--concurrency=1"]
+    environment: *api-env
+    volumes: *content-mount
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A careerpilot.worker inspect ping -d ai@$$HOSTNAME --timeout 5"]
+      interval: 60s
+      timeout: 15s
+      start_period: 30s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+
   beat:
     image: careerpilot-api:local
+    pull_policy: never  # built by the migrate service
     command: ["celery", "-A", "careerpilot.worker", "beat", "--loglevel=INFO",
               "--schedule=/tmp/celerybeat-schedule"]
     environment: *api-env
@@ -116,6 +143,7 @@ services:
       args:
         API_INTERNAL_URL: http://api:8000
     image: careerpilot-web:local
+    pull_policy: build
     ports:
       - "${WEB_PORT:-3000}:3000"
     depends_on:
@@ -130,6 +158,10 @@ services:
   ollama:
     image: ollama/ollama:latest
     profiles: ["ai"]
+    environment:
+      OLLAMA_NUM_PARALLEL: "1"        # one request at a time: least RAM
+      OLLAMA_MAX_LOADED_MODELS: "2"   # the chat model + the embedding model
+      OLLAMA_KEEP_ALIVE: "30m"        # do not reload the model between coach steps
     volumes:
       - ollama:/root/.ollama
     restart: unless-stopped

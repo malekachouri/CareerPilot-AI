@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from careerpilot.core.db import utcnow
 from careerpilot.core.errors import ProblemError
 from careerpilot.core.jobs import enqueue
-from careerpilot.core.llm import LLMProvider, LLMUnavailableError, get_llm
+from careerpilot.core.llm import LLMProvider, LLMTimeoutError, LLMUnavailableError, get_llm
 from careerpilot.modules.coach import evaluation as ev
 from careerpilot.modules.coach.agents import AGENTS, PERSONAS, Agent
 from careerpilot.modules.coach.models import CoachExplanation, CoachMessage, CoachSession, SkillRating
@@ -554,11 +554,18 @@ async def run_job(db: AsyncSession, message_id: uuid.UUID, llm: LLMProvider | No
         msg.status = "done"
     except (LLMUnavailableError, ValueError, KeyError) as exc:
         msg.status = "failed"
-        msg.content = (
-            "The local AI model is not available. Start the `ai` profile and pull the model, then retry."
-            if isinstance(exc, LLMUnavailableError)
-            else f"The coach could not complete this step: {exc}"
-        )
+        if isinstance(exc, LLMTimeoutError):
+            msg.content = (
+                f"The local model took too long ({exc}). This almost always means there is not enough "
+                "free memory and the model is swapping to disk. Close other applications, give Docker/WSL "
+                "more RAM, or use a smaller model (LLM_MODEL=qwen3:1.7b in .env), then retry."
+            )
+        elif isinstance(exc, LLMUnavailableError):
+            msg.content = (
+                "The local AI model is not available. Start the `ai` profile and pull the model, then retry."
+            )
+        else:
+            msg.content = f"The coach could not complete this step: {exc}"
         msg.data = {**msg.data, "error": str(exc)[:500]}
         if session.state.get("step") == "waiting":
             session.state = {

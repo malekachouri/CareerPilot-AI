@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     llm_model: str = "qwen3:4b"
     llm_timeout_seconds: float = 300.0
+    llm_num_ctx: int = 4096  # context window: smaller = less RAM
+    llm_keep_alive: str = "30m"  # keep the model loaded between coach steps
     # Embeddings for RAG (empty = full-text search only). Must produce 768-d vectors (see kb/models.py).
     embedding_model: str = "nomic-embed-text"
 
