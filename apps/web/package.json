@@ -20,25 +20,25 @@
     "@uiw/react-codemirror": "^4.25.12",
     "next": "16.4.6",
     "openapi-fetch": "^0.17.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "4.3.3",
+    "@tailwindcss/turbopack": "4.3.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
-    "@types/node": "^20",
+    "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.3.0",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.4.6",
     "jsdom": "^31.0.1",
     "openapi-typescript": "^7.13.0",
-    "playwright": "1.63.0",
-    "tailwindcss": "4.3.3",
-    "typescript": "^5",
-    "vitest": "^5.1.0"
+    "playwright": "1.65.1",
+    "tailwindcss": "4.3.5",
+    "typescript": "^7",
+    "vitest": "^5.1.1"
   },
   "packageManager": "pnpm@10.28.0"
 }
