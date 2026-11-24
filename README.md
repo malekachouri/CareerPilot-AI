@@ -82,6 +82,7 @@ First career track: **DevOps / Cloud / AI Engineer**. The content model supports
 | [10 — Testing strategy](docs/10-testing-strategy.md) | Test pyramid, AI evaluation, CI gates |
 | [11 — Content & licensing policy](docs/11-content-licensing-policy.md) | Provenance labels, licence rules, takedown process |
 | [12 — Source review (Nov 2026)](docs/12-source-review.md) | Analysis of the owner's captured tests & suggested resources |
+| [13 — Project history](docs/13-project-history.md) | Every step taken, the concepts applied and the evidence (traceability) |
 | [Free & open-source stack](docs/FREE_AND_OPEN_SOURCE_STACK.md) | Every technology: licence, cost, resources, alternatives |
 
 Licence: [MIT](LICENSE). Security reports: see [SECURITY.md](SECURITY.md).
